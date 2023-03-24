@@ -20,4 +20,6 @@
 #define SYS_link   19
 #define SYS_mkdir  20
 #define SYS_close  21
+
+// assign a system call number to newly created system call(sys_myfunction)
 #define SYS_myfunction 22

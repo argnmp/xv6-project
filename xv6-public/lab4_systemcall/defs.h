@@ -187,6 +187,9 @@ int             copyout(pde_t*, uint, void*, uint);
 void            clearpteu(pde_t *pgdir, char *uva);
 
 //prac_syscall.c
+
+// specify newly created function(used as system call)  in defs.h
+// now this function is accessible from other xv6 files
 int myfunction(char*);
 
 // number of elements in fixed-size array

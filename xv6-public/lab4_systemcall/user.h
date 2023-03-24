@@ -23,6 +23,9 @@ int getpid(void);
 char* sbrk(int);
 int sleep(int);
 int uptime(void);
+
+// add newly created system call definition
+// new system call becomes visible in user program
 int myfunction(char*);
 
 // ulib.c

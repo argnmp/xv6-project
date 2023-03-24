@@ -28,6 +28,8 @@ OBJS = \
 	vectors.o\
 	vm.o\
 	prac_syscall.o\
+# specify object file in makefile so that xv6 includes the newly created system call function
+
 
 # Cross-compiling (e.g., on Mac OS X)
 # TOOLPREFIX = i386-jos-elf
@@ -183,7 +185,7 @@ UPROGS=\
 	_zombie\
 	_my_app\
 
-# add user program to xv6
+# add user program in xv6
 
 fs.img: mkfs README $(UPROGS)
 	./mkfs fs.img README $(UPROGS)
@@ -256,6 +258,10 @@ EXTRA=\
 	printf.c umalloc.c my_app.c\
 	README dot-bochsrc *.pl toc.* runoff runoff1 runoff.list\
 	.gdbinit.tmpl gdbutil\
+
+# add user program in xv6
+
+
 
 dist:
 	rm -rf dist

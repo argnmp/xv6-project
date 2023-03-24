@@ -29,4 +29,7 @@ SYSCALL(getpid)
 SYSCALL(sbrk)
 SYSCALL(sleep)
 SYSCALL(uptime)
+
 SYSCALL(myfunction)
+
+// defines how the user program invokes system calls.
