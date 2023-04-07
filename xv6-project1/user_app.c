@@ -1,0 +1,28 @@
+#include "types.h"
+#include "stat.h"
+#include "user.h"
+int main(int argc, char *argv[]) {
+  //__asm__("int $128");
+  for(int i = 0; i<3; i++){
+    int pid = fork();
+    if(pid == 0){
+      setPriority(getpid(), (getpid()+3)%4);
+      for(;;){
+        //printf(0, "pid: %d | (%d, %d) -> (%d, %d)\n",pid, level/10, level%10, cur_level/10, cur_level%10);
+      }
+      exit();
+    }
+    else if(pid > 0){
+    }
+    else {
+      printf(0, "forkfailed\n");
+    }
+  }
+  for(int i = 0; i<2; i++){
+    wait();
+  }
+  printf(0, "waitcomplete\n");
+  exit();
+}
+
+
