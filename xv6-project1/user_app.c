@@ -7,8 +7,12 @@ int main(int argc, char *argv[]) {
     int pid = fork();
     if(pid == 0){
       setPriority(getpid(), (getpid()+3)%4);
+      int level = getLevel();
       for(;;){
-        //printf(0, "pid: %d | (%d, %d) -> (%d, %d)\n",pid, level/10, level%10, cur_level/10, cur_level%10);
+        int cur_level = getLevel();   
+        if(level != cur_level)
+          //printf(0, "changed! pid: %d | (%d, %d) -> (%d, %d)\n",pid, level/10, level%10, cur_level/10, cur_level%10);
+        level = cur_level;
       }
       exit();
     }

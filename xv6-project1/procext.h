@@ -42,6 +42,7 @@ struct proc** move_mlfq_cur(int target, int priority);
 
 // do we need lock for these functions?
 // move process from queue to queue
+int reset_mlfq_tq(struct proc* p);
 int update_mlfq(struct proc* p, int target, int priority);
 int reschedule_mlfq(struct proc* p);
 int boost_mlfq();

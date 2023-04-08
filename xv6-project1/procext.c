@@ -134,6 +134,21 @@ move_mlfq_cur(int target, int priority){
   return ret;
 }
 
+int reset_mlfq_tq(struct proc* p){
+  switch(p->level){
+    case L0:
+      p->ticks = L0_tq;
+      break;
+    case L1:
+      p->ticks = L1_tq;
+      break;
+    case L2:
+      p->ticks = L2_tq;
+      break;
+  }
+  return 0;
+}
+
 int update_mlfq(struct proc* p, int target, int priority){
   cprintf("pid: %d | (%d, %d) -> ",p->pid, p->level, p->priority );
   switch(target){

@@ -488,18 +488,15 @@ end:
     c->proc = (*cur);
     switchuvm(*cur);
     (*cur)->state = RUNNING;
+    // because the selected process is scheduled in the same queue, give the time quantum according to the queue;
+    reset_mlfq_tq(*cur);
+     
 
     swtch(&(c->scheduler), (*cur)->context);
     
     // return to scheduler context
     switchkvm();
     c->proc = 0;
-
-    /** acquire(&schedtickslock); */
-    /** if(schedticks>=100){ */
-      /** schedticks = 0; */
-    /** } */
-    /** release(&schedtickslock); */
     
 
 terminate:
