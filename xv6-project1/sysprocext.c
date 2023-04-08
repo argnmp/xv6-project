@@ -19,3 +19,17 @@ int sys_setPriority(void){
     return -1;
   return setPriority(pid, priority);  
 }
+void sys_schedulerLock(void){
+  int password; 
+  if(argint(0, &password) < 0)
+    exit();
+  int res = schedulerLock(password);
+  if(res == -1) exit();
+}
+void sys_schedulerUnlock(void){
+  int password;
+  if(argint(0, &password) < 0)
+    exit();
+  int res = schedulerUnlock(password);
+  if(res == -1) exit();
+}

@@ -50,3 +50,5 @@ int boost_mlfq();
 // system call
 int getLevel(void);
 int setPriority(int pid, int priority);
+int schedulerLock(int password);
+int schedulerUnlock(int password);

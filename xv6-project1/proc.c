@@ -490,7 +490,6 @@ end:
     (*cur)->state = RUNNING;
     // because the selected process is scheduled in the same queue, give the time quantum according to the queue;
     reset_mlfq_tq(*cur);
-     
 
     swtch(&(c->scheduler), (*cur)->context);
     

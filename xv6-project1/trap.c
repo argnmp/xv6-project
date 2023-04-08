@@ -50,7 +50,9 @@ trap(struct trapframe *tf)
     if(myproc()->killed)
       exit();
     myproc()->tf = tf;
+
     syscall();
+
     if(myproc()->killed)
       exit();
     return;

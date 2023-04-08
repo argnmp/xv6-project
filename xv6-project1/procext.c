@@ -8,9 +8,12 @@
 #include "spinlock.h"
 #include "procext.h"
 
-extern struct pt ptable;
+// trap.c
+extern int schedticks;
+extern struct spinlock schedtickslock;
 
 struct mlfq mlfq;
+struct spinlock mlfq_lock;
 
 int
 push_mlfq(struct proc* p, int target, int priority){
@@ -259,5 +262,27 @@ int getLevel(void){
 }
 int setPriority(int pid, int priority){
   return proc_setPriority(pid, priority);     
+}
+int schedulerLock(int password){
+  acquire(&schedtickslock);
+  cprintf("schedticks: %d\n", schedticks);
+  struct proc *curproc = myproc();
+  if(password != 2019097210){
+    cprintf("schedulerLock invalid password | pid: %d, time_quantum: %d, level: %d\n", curproc->pid, curproc->ticks, curproc->level);
+    release(&schedtickslock);
+    return -1;
+  }
+  schedticks = 0;
+  release(&schedtickslock);
+  return 0; 
+}
+int schedulerUnlock(int password){
+  cprintf("schedticks: %d\n", schedticks);
+  struct proc *curproc = myproc();
+  if(password != 2019097210){
+    cprintf("schedulerUnLock invalid password | pid: %d, time_quantum: %d, level: %d\n", curproc->pid, curproc->ticks, curproc->level);
+    return -1;
+  }
+  return 0;
 }
 
