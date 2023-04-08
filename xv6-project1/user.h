@@ -24,6 +24,7 @@ char* sbrk(int);
 int sleep(int);
 int uptime(void);
 //+
+int yield();
 int getLevel(void);
 int setPriority(int, int);
 
