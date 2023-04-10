@@ -15,6 +15,9 @@
 #define P3 3
 
 struct mlfq{
+  // 0 for not locked | 1 for locked
+  int locking_pid;
+
   int l0_cur;
   int l0_count;
   struct proc* l0[L0_NPROC];
@@ -32,6 +35,11 @@ int count_runnable_mlfq(int target);
 
 // this function just push the process at the empty index started from the cursor in the target queue. So all the other information should have been updated.
 int push_mlfq(struct proc* p, int target, int priority);
+
+// all the other process information must have been updated before calling this code, need to add error case
+// L2 is not supported
+int push_mlfq_front(struct proc* p, int target, int priority);
+
 int remove_mlfq(struct proc* p);
 
 // priority is only used when target is L2

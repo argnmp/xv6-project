@@ -12,10 +12,15 @@
 // Interrupt descriptor table (shared by all CPUs).
 struct gatedesc idt[256];
 extern uint vectors[];  // in vectors.S: array of 256 entry pointers
+                        
 struct spinlock tickslock;
 uint ticks;
 struct spinlock schedtickslock;
 uint schedticks;
+
+// procext.c
+extern struct mlfq mlfq;
+extern struct spinlock mlfq_lock;
 
 
 void
@@ -75,15 +80,32 @@ trap(struct trapframe *tf)
 
       acquire(&schedtickslock);
       schedticks++;
-      if(schedticks == 100){
+      if(schedticks >= 100){
         if(myproc()){
           cprintf("prev running process: %d\n", myproc()->pid);
         }
+        acquire(&mlfq_lock);
         boost_mlfq();
+
+        // schedticks reaches 100
+        // if there is a process that was running holding scheduler lock,
+        
+        if(myproc() && mlfq.locking_pid == myproc()->pid){
+          cprintf("return to mlfq! pid: %d, level: %d, ticks: %d\n", myproc()->pid, myproc()->level, myproc()->ticks);
+          mlfq.locking_pid = 0;
+          myproc()->ticks = L0_tq;
+
+          remove_mlfq(myproc());
+          push_mlfq_front(myproc(), L0, 3);
+        }
+
+        release(&mlfq_lock);
         schedticks = 0;
       }
       if(myproc()){
-        myproc()->ticks -= 1;
+        if(myproc()->ticks > 0)
+          myproc()->ticks -= 1;
+        //cprintf("ticks: %d\n", myproc()->ticks);
       }
       release(&schedtickslock);
 
@@ -144,7 +166,7 @@ trap(struct trapframe *tf)
       tf->trapno == T_IRQ0+IRQ_TIMER){
 
     /*
-    acquire(&schedtickslock);
+    auire(&schedtickslock);
     if(schedticks < 100){
       release(&schedtickslock);
     }
@@ -154,10 +176,33 @@ trap(struct trapframe *tf)
       yield();
     }
     */
-    if(myproc()->ticks == 0){
+    acquire(&mlfq_lock);
+    //cprintf("is locking? %d\n", mlfq.locking_pid);
+    if(myproc()->ticks == 0 && mlfq.locking_pid==0){
+
       cprintf("pid: %d ticks over, schedule!\n", myproc()->pid);
       reschedule_mlfq(myproc());
+      cprintf("l0_cur: %d, l1_cur: %d\n", mlfq.l0_cur, mlfq.l1_cur);
+      for(int i = 0; i<L0_NPROC; i++){
+        if(mlfq.l0[i]==0) cprintf("* ");
+        else cprintf("%d ",mlfq.l0[i]->pid);
+      }
+      cprintf("\n");
+      for(int i = 0; i<L1_NPROC; i++){
+        if(mlfq.l1[i]==0) cprintf("* ");
+        else cprintf("%d ",mlfq.l1[i]->pid);
+      }
+      cprintf("\n");
+      for(int i = 0; i<L2_NPROC; i++){
+        if(mlfq.l2[i]==0) cprintf("* ");
+        else cprintf("%d ",mlfq.l2[i]->pid);
+      }
+      cprintf("\n");
+      release(&mlfq_lock);
       yield();
+    }
+    else {
+      release(&mlfq_lock);
     }
     
   }

@@ -398,6 +398,7 @@ scheduler(void)
       if((*cur)!=0 && (*cur)->state == RUNNABLE){
         move_mlfq_cur(L0, PNONE);
         //cprintf("l0 cursor changed to %d\n", mlfq.l0_cur);
+        cprintf("found l0!\n");
         goto end;
       }
       // should move_mlfq_cur first
@@ -413,6 +414,7 @@ scheduler(void)
       if((*cur)!=0 && (*cur)->state == RUNNABLE){
         move_mlfq_cur(L1, PNONE);
         //cprintf("l1 cursor changed to %d\n", mlfq.l0_cur);
+        cprintf("found l1!\n");
         goto end;
       }
 
@@ -429,6 +431,7 @@ scheduler(void)
       if((*cur)!=0 && (*cur)->priority == P0 && (*cur)->state == RUNNABLE){
         move_mlfq_cur(L2, P0);
         //cprintf("l2 p0 cursor changed to %d\n", mlfq.l0_cur);
+        cprintf("found l2 p0!\n");
         goto end;
       }
 
@@ -444,6 +447,7 @@ scheduler(void)
       if((*cur)!=0 && (*cur)->priority == P1 && (*cur)->state == RUNNABLE){
         move_mlfq_cur(L2, P1);
         //cprintf("l2 p1 cursor changed to %d\n", mlfq.l0_cur);
+        cprintf("found l2 p1!\n");
         goto end;
       }
 
@@ -457,6 +461,7 @@ scheduler(void)
     for(cur = get_mlfq_cur(L2, P2), cur_limit = get_mlfq_cur_limit(L2, P2); ; cur = move_mlfq_cur(L2, P2)){
       if((*cur)!=0 && (*cur)->priority == P2 && (*cur)->state == RUNNABLE){
         move_mlfq_cur(L2, P2);
+        cprintf("found l2 p2!\n");
         //cprintf("l2 p2 cursor changed to %d\n", mlfq.l0_cur);
         goto end;
       }
@@ -471,6 +476,7 @@ scheduler(void)
     for(cur = get_mlfq_cur(L2, P3), cur_limit = get_mlfq_cur_limit(L2, P3); ; cur = move_mlfq_cur(L2, P3)){
       if((*cur)!=0 && (*cur)->priority == P3 && (*cur)->state == RUNNABLE){
         move_mlfq_cur(L2, P3);
+        cprintf("found l2 p3!\n");
         //cprintf("l2 p3 cursor changed to %d\n", mlfq.l0_cur);
         goto end;
       }
@@ -492,7 +498,6 @@ end:
     reset_mlfq_tq(*cur);
 
     swtch(&(c->scheduler), (*cur)->context);
-    
     // return to scheduler context
     switchkvm();
     c->proc = 0;
