@@ -14,6 +14,9 @@
 #define P2 2
 #define P3 3
 
+// 0: mlfq schduling in specification | 1: mlfq scheduling by seperating I/O-bound, cpu-bound process
+#define MLFQ_SCH_SCHEME 0 
+
 struct mlfq{
   // 0 for not locked | 1 for locked
   int locking_pid;

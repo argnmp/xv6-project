@@ -341,7 +341,7 @@ wait(void)
 //  - eventually that process transfers control
 //      via swtch back to the scheduler.
 void
-scheduler(void)
+xscheduler(void)
 {
   struct proc *p;
   struct cpu *c = mycpu();
@@ -381,7 +381,7 @@ scheduler(void)
 
 //+
 void
-xscheduler(void)
+scheduler(void)
 {
   struct proc** cur;
   struct proc** cur_limit;
@@ -483,7 +483,13 @@ end:
     switchuvm(*cur);
     (*cur)->state = RUNNING;
     // because the selected process is scheduled in the same queue, give the time quantum according to the queue;
-    reset_mlfq_tq(*cur);
+    
+    if(MLFQ_SCH_SCHEME==0){
+
+    }
+    else if(MLFQ_SCH_SCHEME==1){
+      reset_mlfq_tq(*cur);
+    }
 
     swtch(&(c->scheduler), (*cur)->context);
     // return to scheduler context

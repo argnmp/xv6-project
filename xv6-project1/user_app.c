@@ -60,16 +60,18 @@ int main(int argc, char * argv[]){
   }
   else if(pid>0){
     //printf(0, "main\n");
-    create_worker(10);
+    create_worker(3);
   }
   else{
     exit();
   }
+  /*
   schedulerLock(2019097210);
   for(;;){
     printf(0, "main is locking\n");
   }
   schedulerUnlock(2019097210);
+  */
 
   for(int i = 0; i<200; i++){
     wait();

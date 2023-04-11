@@ -168,20 +168,45 @@ trap(struct trapframe *tf)
   if(myproc() && myproc()->state == RUNNING &&
       tf->trapno == T_IRQ0+IRQ_TIMER){
 
-    acquire(&mlfq_lock);
-    if(myproc()->ticks == 0 && mlfq.locking_pid==0){
-      cprintf("pid: %d ticks over, schedule!\n", myproc()->pid);
-      cprintf("\tbefore_reschedule\n");
-      view_mlfq_status();
-      reschedule_mlfq(myproc());
-      cprintf("\tafter_reschedule\n");
-      cprintf("\n");
-      view_mlfq_status();
+    
+    if(MLFQ_SCH_SCHEME == 0){
+      acquire(&mlfq_lock);
+      if(myproc()->ticks == 0){
+        cprintf("pid: %d ticks over, schedule!\n", myproc()->pid);
+        cprintf("\tbefore_reschedule\n");
+        view_mlfq_status();
+        reschedule_mlfq(myproc());
+        cprintf("\tafter_reschedule\n");
+        view_mlfq_status();
+        cprintf("\n");
+      }
       release(&mlfq_lock);
-      yield();
+      if(mlfq.locking_pid == 0){
+        yield();
+      }
+
+    }
+    else if(MLFQ_SCH_SCHEME == 1){
+      acquire(&mlfq_lock);
+      if(myproc()->ticks == 0 && mlfq.locking_pid==0){
+        cprintf("pid: %d ticks over, schedule!\n", myproc()->pid);
+        cprintf("\tbefore_reschedule\n");
+        view_mlfq_status();
+        reschedule_mlfq(myproc());
+        cprintf("\tafter_reschedule\n");
+        view_mlfq_status();
+        cprintf("\n");
+        release(&mlfq_lock);
+
+        yield();
+      }
+      else {
+        release(&mlfq_lock);
+      }
+
     }
     else {
-      release(&mlfq_lock);
+      panic("MLFQ_SCH_SCHEME parameter is invalid");
     }
     
   }
