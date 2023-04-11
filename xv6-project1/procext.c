@@ -347,3 +347,22 @@ int schedulerUnlock(int password){
   }
 }
 
+void view_mlfq_status(){
+  cprintf("l0_cur: %d, l1_cur: %d\n", mlfq.l0_cur, mlfq.l1_cur);
+  for(int i = 0; i<L0_NPROC; i++){
+    if(mlfq.l0[i]==0) cprintf("* ");
+    else cprintf("%d ",mlfq.l0[i]->pid);
+  }
+  cprintf("\n");
+  for(int i = 0; i<L1_NPROC; i++){
+    if(mlfq.l1[i]==0) cprintf("* ");
+    else cprintf("%d ",mlfq.l1[i]->pid);
+  }
+  cprintf("\n");
+  for(int i = 0; i<L2_NPROC; i++){
+    if(mlfq.l2[i]==0) cprintf("* ");
+    else cprintf("%d ",mlfq.l2[i]->pid);
+  }
+  cprintf("\n");
+}
+

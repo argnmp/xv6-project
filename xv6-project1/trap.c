@@ -75,6 +75,9 @@ trap(struct trapframe *tf)
   switch(tf->trapno){
   case T_IRQ0 + IRQ_TIMER:
     if(cpuid() == 0){
+      if(myproc()){
+        cprintf("pid: %d\n", myproc()->pid);
+      }
       acquire(&tickslock);
       ticks++;
 
@@ -165,39 +168,15 @@ trap(struct trapframe *tf)
   if(myproc() && myproc()->state == RUNNING &&
       tf->trapno == T_IRQ0+IRQ_TIMER){
 
-    /*
-    auire(&schedtickslock);
-    if(schedticks < 100){
-      release(&schedtickslock);
-    }
-    else {
-      release(&schedtickslock);
-      boost_mlfq();
-      yield();
-    }
-    */
     acquire(&mlfq_lock);
-    //cprintf("is locking? %d\n", mlfq.locking_pid);
     if(myproc()->ticks == 0 && mlfq.locking_pid==0){
-
       cprintf("pid: %d ticks over, schedule!\n", myproc()->pid);
+      cprintf("\tbefore_reschedule\n");
+      view_mlfq_status();
       reschedule_mlfq(myproc());
-      cprintf("l0_cur: %d, l1_cur: %d\n", mlfq.l0_cur, mlfq.l1_cur);
-      for(int i = 0; i<L0_NPROC; i++){
-        if(mlfq.l0[i]==0) cprintf("* ");
-        else cprintf("%d ",mlfq.l0[i]->pid);
-      }
+      cprintf("\tafter_reschedule\n");
       cprintf("\n");
-      for(int i = 0; i<L1_NPROC; i++){
-        if(mlfq.l1[i]==0) cprintf("* ");
-        else cprintf("%d ",mlfq.l1[i]->pid);
-      }
-      cprintf("\n");
-      for(int i = 0; i<L2_NPROC; i++){
-        if(mlfq.l2[i]==0) cprintf("* ");
-        else cprintf("%d ",mlfq.l2[i]->pid);
-      }
-      cprintf("\n");
+      view_mlfq_status();
       release(&mlfq_lock);
       yield();
     }

@@ -341,7 +341,7 @@ wait(void)
 //  - eventually that process transfers control
 //      via swtch back to the scheduler.
 void
-xscheduler(void)
+scheduler(void)
 {
   struct proc *p;
   struct cpu *c = mycpu();
@@ -381,7 +381,7 @@ xscheduler(void)
 
 //+
 void
-scheduler(void)
+xscheduler(void)
 {
   struct proc** cur;
   struct proc** cur_limit;
@@ -397,14 +397,12 @@ scheduler(void)
     for(cur = get_mlfq_cur(L0, PNONE), cur_limit = get_mlfq_cur_limit(L0, PNONE); ; cur = move_mlfq_cur(L0, PNONE)){
       if((*cur)!=0 && (*cur)->state == RUNNABLE){
         move_mlfq_cur(L0, PNONE);
-        //cprintf("l0 cursor changed to %d\n", mlfq.l0_cur);
-        cprintf("found l0!\n");
+        //cprintf("found l0!\n");
         goto end;
       }
       // should move_mlfq_cur first
       if(cur == cur_limit) {
         move_mlfq_cur(L0, PNONE);
-        //cprintf("l0 cursor changed to %d\n", mlfq.l0_cur);
         break;
       }
     }
@@ -413,15 +411,13 @@ scheduler(void)
     for(cur = get_mlfq_cur(L1, PNONE), cur_limit = get_mlfq_cur_limit(L1, PNONE); ; cur = move_mlfq_cur(L1, PNONE)){
       if((*cur)!=0 && (*cur)->state == RUNNABLE){
         move_mlfq_cur(L1, PNONE);
-        //cprintf("l1 cursor changed to %d\n", mlfq.l0_cur);
-        cprintf("found l1!\n");
+        //cprintf("found l1!\n");
         goto end;
       }
 
       // should move_mlfq_cur first
       if(cur == cur_limit) {
         move_mlfq_cur(L1, PNONE);
-        //cprintf("l1 cursor changed to %d\n", mlfq.l0_cur);
         break;
       }
     }
@@ -430,15 +426,13 @@ scheduler(void)
     for(cur = get_mlfq_cur(L2, P0), cur_limit = get_mlfq_cur_limit(L2, P0); ; cur = move_mlfq_cur(L2, P0)){
       if((*cur)!=0 && (*cur)->priority == P0 && (*cur)->state == RUNNABLE){
         move_mlfq_cur(L2, P0);
-        //cprintf("l2 p0 cursor changed to %d\n", mlfq.l0_cur);
-        cprintf("found l2 p0!\n");
+        //cprintf("found l2 p0!\n");
         goto end;
       }
 
       // no runnable process exists
       if(cur == cur_limit) {
         move_mlfq_cur(L2, P0);
-        //cprintf("l2 p0 cursor changed to %d\n", mlfq.l0_cur);
         break;
       }
     }
@@ -446,44 +440,38 @@ scheduler(void)
     for(cur = get_mlfq_cur(L2, P1), cur_limit = get_mlfq_cur_limit(L2, P1); ; cur = move_mlfq_cur(L2, P1)){
       if((*cur)!=0 && (*cur)->priority == P1 && (*cur)->state == RUNNABLE){
         move_mlfq_cur(L2, P1);
-        //cprintf("l2 p1 cursor changed to %d\n", mlfq.l0_cur);
-        cprintf("found l2 p1!\n");
+        //cprintf("found l2 p1!\n");
         goto end;
       }
 
       // no runnable process exists
       if(cur == cur_limit) {
         move_mlfq_cur(L2, P1);
-        //cprintf("l2 p1 cursor changed to %d\n", mlfq.l0_cur);
         break;
       }
     }
     for(cur = get_mlfq_cur(L2, P2), cur_limit = get_mlfq_cur_limit(L2, P2); ; cur = move_mlfq_cur(L2, P2)){
       if((*cur)!=0 && (*cur)->priority == P2 && (*cur)->state == RUNNABLE){
         move_mlfq_cur(L2, P2);
-        cprintf("found l2 p2!\n");
-        //cprintf("l2 p2 cursor changed to %d\n", mlfq.l0_cur);
+        //cprintf("found l2 p2!\n");
         goto end;
       }
 
       // no runnable process exists
       if(cur == cur_limit) {
         move_mlfq_cur(L2, P2);
-        //cprintf("l2 p2 cursor changed to %d\n", mlfq.l0_cur);
         break;
       }
     }
     for(cur = get_mlfq_cur(L2, P3), cur_limit = get_mlfq_cur_limit(L2, P3); ; cur = move_mlfq_cur(L2, P3)){
       if((*cur)!=0 && (*cur)->priority == P3 && (*cur)->state == RUNNABLE){
         move_mlfq_cur(L2, P3);
-        cprintf("found l2 p3!\n");
-        //cprintf("l2 p3 cursor changed to %d\n", mlfq.l0_cur);
+        //cprintf("found l2 p3!\n");
         goto end;
       }
       // no runnable process exists
       if(cur == cur_limit) {
         move_mlfq_cur(L2, P3);
-        //cprintf("l2 p3 cursor changed to %d\n", mlfq.l0_cur);
         break;
       }
     }

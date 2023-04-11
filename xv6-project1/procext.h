@@ -35,11 +35,8 @@ int count_runnable_mlfq(int target);
 
 // this function just push the process at the empty index started from the cursor in the target queue. So all the other information should have been updated.
 int push_mlfq(struct proc* p, int target, int priority);
-
 // all the other process information must have been updated before calling this code, need to add error case
-// L2 is not supported
-int push_mlfq_front(struct proc* p, int target, int priority);
-
+int push_mlfq_front(struct proc* p, int target, int priority); //L2 is not supported
 int remove_mlfq(struct proc* p);
 
 // priority is only used when target is L2
@@ -60,3 +57,7 @@ int getLevel(void);
 int setPriority(int pid, int priority);
 int schedulerLock(int password);
 int schedulerUnlock(int password);
+
+// debugging
+// mlfq_lock shoule be acquired before jumping to this code
+void view_mlfq_status(void);
