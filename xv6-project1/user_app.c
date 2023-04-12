@@ -48,31 +48,7 @@ int main(int argc, char *argv[]) {
 }
 */
 int main(int argc, char * argv[]){
-  int pid;
-  pid = fork();
-  if(pid==0){
-    //printf(0, "pid: %d\n", getpid());
-    
-    for(;;){
-      //printf(0, "still, pid: %d\n", getpid());
-    }
-    exit();
-  }
-  else if(pid>0){
-    //printf(0, "main\n");
-    create_worker(3);
-  }
-  else{
-    exit();
-  }
-  /*
-  schedulerLock(2019097210);
-  for(;;){
-    printf(0, "main is locking\n");
-  }
-  schedulerUnlock(2019097210);
-  */
-
+  create_worker(3);
   for(int i = 0; i<200; i++){
     wait();
   }

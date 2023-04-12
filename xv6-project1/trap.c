@@ -75,14 +75,18 @@ trap(struct trapframe *tf)
   switch(tf->trapno){
   case T_IRQ0 + IRQ_TIMER:
     if(cpuid() == 0){
-      if(myproc()){
-        cprintf("pid: %d\n", myproc()->pid);
-      }
       acquire(&tickslock);
       ticks++;
 
       acquire(&schedtickslock);
       schedticks++;
+
+      if(myproc()){
+        if(myproc()->ticks > 0)
+          myproc()->ticks -= 1;
+        //cprintf("ticks: %d\n", myproc()->ticks);
+      }
+
       if(schedticks >= 100){
         if(myproc()){
           cprintf("prev running process: %d\n", myproc()->pid);
@@ -104,11 +108,6 @@ trap(struct trapframe *tf)
 
         release(&mlfq_lock);
         schedticks = 0;
-      }
-      if(myproc()){
-        if(myproc()->ticks > 0)
-          myproc()->ticks -= 1;
-        //cprintf("ticks: %d\n", myproc()->ticks);
       }
       release(&schedtickslock);
 
@@ -173,8 +172,8 @@ trap(struct trapframe *tf)
       acquire(&mlfq_lock);
       if(myproc()->ticks == 0){
         cprintf("pid: %d ticks over, schedule!\n", myproc()->pid);
-        cprintf("\tbefore_reschedule\n");
-        view_mlfq_status();
+        //cprintf("\tbefore_reschedule\n");
+        //view_mlfq_status();
         reschedule_mlfq(myproc());
         cprintf("\tafter_reschedule\n");
         view_mlfq_status();

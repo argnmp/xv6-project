@@ -479,6 +479,7 @@ scheduler(void)
     goto terminate;
 
 end:
+    cprintf("found process %d, left ticks %d\n", (*cur)->pid,(*cur)->ticks);
     c->proc = (*cur);
     switchuvm(*cur);
     (*cur)->state = RUNNING;
