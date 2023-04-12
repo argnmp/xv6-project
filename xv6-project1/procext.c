@@ -73,7 +73,21 @@ int push_mlfq_front(struct proc* p, int target, int priority){
   }
   switch(target){
     case L0:
-      mlfq.l0_cur = 1;
+      /* If priority boosting occurs while holding lock, it boosts all the processes to L0, and set the process that has been holding lock to be served first in L0 queue.
+       * For MLFQ_SCH_SCHEME 0, when this happens, always select the new process.
+       * So the queue cursor which means the next process to be served is set to 0.
+       * For MLFQ_SCH_SCHEME 1, when this happens, it does not yield to scheduler. It just returns and go back to the process that has been executed(which time quantum was reset).
+       * So, the L0 queue cursor which means the next process to be served is set to 1.(because the cpu is not yielded to scheduler from process)
+       */
+      if(MLFQ_SCH_SCHEME==0){
+        mlfq.l0_cur = 0;
+      } 
+      else if(MLFQ_SCH_SCHEME==1){
+        mlfq.l0_cur = 1;
+      }
+      else {
+        panic("MLFQ_SCH_SCHEME parameter is invalid");
+      }
       for(int i = 0; i<cursor; i++){
         mlfq.l0[i] = buffer[i]; 
         buffer[i]->mlfq_pos = &mlfq.l0[i];
@@ -81,7 +95,15 @@ int push_mlfq_front(struct proc* p, int target, int priority){
       p->mlfq_pos = mlfq.l0;
       break;
     case L1:
-      mlfq.l1_cur = 1;
+      if(MLFQ_SCH_SCHEME==0){
+        mlfq.l1_cur = 0;
+      } 
+      else if(MLFQ_SCH_SCHEME==1){
+        mlfq.l1_cur = 1;
+      }
+      else {
+        panic("MLFQ_SCH_SCHEME parameter is invalid");
+      }
       for(int i = 0; i<cursor; i++){
         mlfq.l1[i] = buffer[i]; 
         buffer[i]->mlfq_pos = &mlfq.l1[i];

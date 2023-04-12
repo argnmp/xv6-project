@@ -19,36 +19,16 @@ void create_worker(int n){
     }
   }
 }
-/*
-int main(int argc, char *argv[]) {
-  //__asm__("int $128");
-  int worker_num = 4;
-  for(int i = 0; i<worker_num; i++){
-    int pid = fork();
-
-    if(pid == 0){
-      setPriority(getpid(), (getpid()+3)%4);
-      //schedulerLock(2019097210);
-      for(;;){
-        
-      }
-      exit();
-    }
-    else if(pid > 0){
-    }
-    else {
-      printf(0, "forkfailed\n");
-    }
-  }
-  for(int i = 0; i<worker_num; i++){
-    wait();
-  }
-  printf(0, "waitcomplete\n");
-  exit();
-}
-*/
 int main(int argc, char * argv[]){
-  create_worker(3);
+  create_worker(4);
+
+  schedulerLock(2019097210);
+  for(int i = 0;;i++){
+    if(i%64==0){
+      //printf(0,".\n");
+    }
+  }
+  schedulerUnlock(2019097210);
   for(int i = 0; i<200; i++){
     wait();
   }

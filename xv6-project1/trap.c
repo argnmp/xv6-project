@@ -104,7 +104,9 @@ trap(struct trapframe *tf)
 
           remove_mlfq(myproc());
           push_mlfq_front(myproc(), L0, 3);
+
         }
+        view_mlfq_status();
 
         release(&mlfq_lock);
         schedticks = 0;
