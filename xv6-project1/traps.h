@@ -26,6 +26,10 @@
 // processor defined exceptions or interrupt vectors.
 #define T_SYSCALL       64      // system call
 #define T_USERINT      128      // test trap that can be called by user                 
+                                //
+#define T_SCHEDULERLOCK     129 // schedulerlock interrupt
+#define T_SCHEDULERUNLOCK   130 // schedulerUnlock interrupt
+                                //
 #define T_DEFAULT      500      // catchall
 
 #define T_IRQ0          32      // IRQ 0 corresponds to int T_IRQ

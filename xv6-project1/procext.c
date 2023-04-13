@@ -265,7 +265,7 @@ int boost_mlfq(){
   struct proc** cur;
   struct proc** cur_limit;
 
-  //+ boost_mlfq에 추가함
+  //+ reset the time quantum and priority
   for(cur = get_mlfq_cur(L0, PNONE), cur_limit = get_mlfq_cur_limit(L0, PNONE); ; cur = get_mlfq_cur_next(cur, L0)){
     if((*cur)!=0){
       (*cur)->ticks = L0_tq;
@@ -368,12 +368,19 @@ int schedulerUnlock(int password){
   if(mlfq.locking_pid != 0 && mlfq.locking_pid == curproc->pid){
     mlfq.locking_pid = 0;
 
+    // move current running process to L0
     curproc->level = L0;
     curproc->ticks = L0_tq;
     curproc->priority = 3;
 
     remove_mlfq(curproc);
     push_mlfq_front(curproc, L0, 3);
+
+    /*
+     * For syscall, there is no yield occurs after handling syscall request but it just resumes the process that was running before syscall
+     * So, move mlfq L0 cursor by 1, so that the next process could be executed when timer interrupt occurs. ()
+     */
+    mlfq.l0_cur += 1;
 
     release(&mlfq_lock);
     return 0;

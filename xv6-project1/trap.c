@@ -34,6 +34,8 @@ tvinit(void)
 
   // test trap that can be called from user
   SETGATE(idt[T_USERINT], 1, SEG_KCODE<<3, vectors[T_USERINT], DPL_USER);
+  SETGATE(idt[T_SCHEDULERLOCK], 1, SEG_KCODE<<3, vectors[T_SCHEDULERLOCK], DPL_USER);
+  SETGATE(idt[T_SCHEDULERUNLOCK], 1, SEG_KCODE<<3, vectors[T_SCHEDULERUNLOCK], DPL_USER);
 
   initlock(&tickslock, "time");
   
@@ -63,10 +65,20 @@ trap(struct trapframe *tf)
     return;
   }
   
-  if(tf->trapno == T_USERINT){
+  if(tf->trapno == T_SCHEDULERLOCK){
     if(myproc()->killed)
       exit();
-    cprintf("user interrupt (trap number) called!");
+    cprintf("schedulerLock interrupt called");
+    schedulerLock(2019097210);
+    if(myproc()->killed)
+      exit();
+    return;
+  }
+  if(tf->trapno == T_SCHEDULERUNLOCK){
+    if(myproc()->killed)
+      exit();
+    cprintf("schedulerUnlock interrupt called");
+    schedulerUnlock(2019097210);
     if(myproc()->killed)
       exit();
     return;
@@ -85,7 +97,7 @@ trap(struct trapframe *tf)
         if(myproc()->ticks > 0){
           myproc()->ticks -= 1;
         }
-        cprintf("timer interrupt! running process pid: %d, ticks: %d\n", myproc()->pid, myproc()->ticks);
+        cprintf("timer interrupt! running process pid: %d, decreased ticks: %d\n", myproc()->pid, myproc()->ticks);
       }
 
       if(schedticks >= 100){
