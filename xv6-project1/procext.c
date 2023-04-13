@@ -73,7 +73,8 @@ int push_mlfq_front(struct proc* p, int target, int priority){
   }
   switch(target){
     case L0:
-      /* If priority boosting occurs while holding lock, it boosts all the processes to L0, and set the process that has been holding lock to be served first in L0 queue.
+      /* 
+       * If priority boosting occurs while holding lock, it boosts all the processes to L0, and set the process that has been holding lock to be served first in L0 queue.
        * For MLFQ_SCH_SCHEME 0, when this happens, always select the new process.
        * So the queue cursor which means the next process to be served is set to 0.
        * For MLFQ_SCH_SCHEME 1, when this happens, it does not yield to scheduler. It just returns and go back to the process that has been executed(which time quantum was reset).
@@ -264,6 +265,17 @@ int boost_mlfq(){
   struct proc** cur;
   struct proc** cur_limit;
 
+  //+ boost_mlfq에 추가함
+  for(cur = get_mlfq_cur(L0, PNONE), cur_limit = get_mlfq_cur_limit(L0, PNONE); ; cur = get_mlfq_cur_next(cur, L0)){
+    if((*cur)!=0){
+      (*cur)->ticks = L0_tq;
+      (*cur)->priority = 3;
+    }
+    if(cur == cur_limit) {
+      break;
+    }
+  }
+
   for(cur = get_mlfq_cur(L1, PNONE), cur_limit = get_mlfq_cur_limit(L1, PNONE); ; cur = get_mlfq_cur_next(cur, L1)){
     if((*cur)!=0){
       update_mlfq(*cur, L0, 3);     
@@ -327,11 +339,7 @@ int schedulerLock(int password){
   }
 
   acquire(&mlfq_lock);
-  if(mlfq.locking_pid != 0){
-    release(&mlfq_lock);
-    return -1;
-  }
-  else {
+  if(mlfq.locking_pid == 0){
     mlfq.locking_pid = curproc->pid;
     release(&mlfq_lock);
 
@@ -341,9 +349,16 @@ int schedulerLock(int password){
 
     return 0;
   }
+  else if(mlfq.locking_pid == curproc->pid){
+    release(&mlfq_lock);
+    return 0;
+  }
+  else{
+    release(&mlfq_lock);
+    return -1;
+  }
 }
 int schedulerUnlock(int password){
-  cprintf("schedticks: %d\n", schedticks);
   struct proc *curproc = myproc();
   if(password != 2019097210){
     cprintf("schedulerUnLock invalid password | pid: %d, time_quantum: %d, level: %d\n", curproc->pid, curproc->ticks, curproc->level);

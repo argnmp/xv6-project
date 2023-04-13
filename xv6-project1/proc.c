@@ -279,6 +279,7 @@ exit(void)
 
   // Jump into the scheduler, never to return.
   curproc->state = ZOMBIE;
+  schedulerUnlock(2019097210);
   sched();
   panic("zombie exit");
 }
@@ -361,6 +362,7 @@ xscheduler(void)
       // Switch to chosen process.  It is the process's job
       // to release ptable.lock and then reacquire it
       // before jumping back to us.
+      
       c->proc = p;
       switchuvm(p);
       p->state = RUNNING;
@@ -535,6 +537,7 @@ yield(void)
 {
   acquire(&ptable.lock);  //DOC: yieldlock
   myproc()->state = RUNNABLE;
+  schedulerUnlock(2019097210);
   sched();
   release(&ptable.lock);
 }
@@ -586,6 +589,8 @@ sleep(void *chan, struct spinlock *lk)
   // Go to sleep.
   p->chan = chan;
   p->state = SLEEPING;
+  
+  schedulerUnlock(2019097210);
 
   sched();
 
@@ -640,6 +645,7 @@ kill(int pid)
       return 0;
     }
   }
+  schedulerUnlock(2019097210);
   release(&ptable.lock);
   return -1;
 }

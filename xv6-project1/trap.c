@@ -82,9 +82,10 @@ trap(struct trapframe *tf)
       schedticks++;
 
       if(myproc()){
-        if(myproc()->ticks > 0)
+        if(myproc()->ticks > 0){
           myproc()->ticks -= 1;
-        //cprintf("ticks: %d\n", myproc()->ticks);
+        }
+        cprintf("timer interrupt! running process pid: %d, ticks: %d\n", myproc()->pid, myproc()->ticks);
       }
 
       if(schedticks >= 100){
