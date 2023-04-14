@@ -68,7 +68,7 @@ trap(struct trapframe *tf)
   if(tf->trapno == T_SCHEDULERLOCK){
     if(myproc()->killed)
       exit();
-    cprintf("schedulerLock interrupt called");
+    cprintf("[trap()] schedulerLock interrupt called\n");
     schedulerLock(2019097210);
     if(myproc()->killed)
       exit();
@@ -77,7 +77,7 @@ trap(struct trapframe *tf)
   if(tf->trapno == T_SCHEDULERUNLOCK){
     if(myproc()->killed)
       exit();
-    cprintf("schedulerUnlock interrupt called");
+    cprintf("[trap()]schedulerUnlock interrupt called\n");
     schedulerUnlock(2019097210);
     if(myproc()->killed)
       exit();
@@ -186,7 +186,7 @@ trap(struct trapframe *tf)
     if(MLFQ_SCH_SCHEME == 0){
       acquire(&mlfq_lock);
       if(myproc()->ticks == 0){
-        cprintf("pid: %d ticks over, schedule!\n", myproc()->pid);
+        cprintf("pid: %d ticks over, reschedule!\n", myproc()->pid);
         //cprintf("\tbefore_reschedule\n");
         //view_mlfq_status();
         reschedule_mlfq(myproc());
@@ -194,18 +194,29 @@ trap(struct trapframe *tf)
         view_mlfq_status();
         cprintf("\n");
       }
+      else {
+        if(myproc()->level == L2){
+          /*
+           * L2 queue should be served by FCFS
+           * To prevent the case that waiting process in L2 queue is served later than the new process entered in L2, the process in L2 is resheduled to same queue every tick
+           */
+          cprintf("pid: %d reschedule to last\n", myproc()->pid);
+          reschedule_mlfq_to_last(myproc());
+          cprintf("\tafter_reschedule\n");
+          view_mlfq_status();
+        }
+      }
       release(&mlfq_lock);
       if(mlfq.locking_pid == 0){
         yield();
       }
-
     }
     else if(MLFQ_SCH_SCHEME == 1){
       acquire(&mlfq_lock);
       if(myproc()->ticks == 0 && mlfq.locking_pid==0){
         cprintf("pid: %d ticks over, schedule!\n", myproc()->pid);
-        cprintf("\tbefore_reschedule\n");
-        view_mlfq_status();
+        //cprintf("\tbefore_reschedule\n");
+        //view_mlfq_status();
         reschedule_mlfq(myproc());
         cprintf("\tafter_reschedule\n");
         view_mlfq_status();

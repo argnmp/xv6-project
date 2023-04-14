@@ -17,6 +17,7 @@
 // 0: mlfq schduling in specification | 1: mlfq scheduling by seperating I/O-bound, cpu-bound process
 #define MLFQ_SCH_SCHEME 0
 
+
 struct mlfq{
   // 0 for not locked | 1 for locked
   int locking_pid;
@@ -53,6 +54,7 @@ struct proc** move_mlfq_cur(int target, int priority);
 int reset_mlfq_tq(struct proc* p);
 int update_mlfq(struct proc* p, int target, int priority);
 int reschedule_mlfq(struct proc* p);
+int reschedule_mlfq_to_last(struct proc* p);
 int boost_mlfq();
 
 // system call

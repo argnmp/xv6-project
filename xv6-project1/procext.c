@@ -31,20 +31,6 @@ push_mlfq(struct proc* p, int target, int priority){
   return -1;
   
 found:
-  switch(target){
-    case L0:
-      p->ticks = L0_tq;
-      p->level = L0;
-      break;
-    case L1:
-      p->ticks = L1_tq;
-      p->level = L1;
-      break;
-    case L2:
-      p->ticks = L2_tq;
-      p->level = L2;
-      break;
-  }
   *cur = p;
   p->mlfq_pos = cur;
   
@@ -259,6 +245,26 @@ int reschedule_mlfq(struct proc* p){
   }
   return 0;
 }
+int reschedule_mlfq_to_last(struct proc* p){
+  cprintf("pid: %d | (%d, %d) -> ",p->pid, p->level, p->priority );
+  if(p->level == L0){
+      remove_mlfq(p);
+      push_mlfq(p, L0, p->priority);
+  }
+  else if(p->level == L1){
+      remove_mlfq(p);
+      push_mlfq(p, L1, p->priority);
+  }
+  else if(p->level == L2){
+      remove_mlfq(p);
+      push_mlfq(p, L2, p->priority);
+  }
+  else {
+    return -1;
+  }
+  cprintf("(%d, %d)\n", p->level, p->priority);
+  return 0;
+}
 
 int boost_mlfq(){
   cprintf("boost start!\n");
@@ -392,7 +398,7 @@ int schedulerUnlock(int password){
 }
 
 void view_mlfq_status(){
-  cprintf("l0_cur: %d, l1_cur: %d\n", mlfq.l0_cur, mlfq.l1_cur);
+  cprintf("l0_cur: %d, l1_cur: %d, l2_p0_cur: %d, l2_p1_cur: %d, l2_p2_cur: %d, l2_p3_cur: %d\n", mlfq.l0_cur, mlfq.l1_cur, mlfq.l2_cur[0], mlfq.l2_cur[1], mlfq.l2_cur[2], mlfq.l2_cur[3]);
   for(int i = 0; i<L0_NPROC; i++){
     if(mlfq.l0[i]==0) cprintf("* ");
     else cprintf("%d ",mlfq.l0[i]->pid);

@@ -693,14 +693,31 @@ procdump(void)
 int
 proc_setPriority(int pid, int priority){
   struct proc *p;
+  struct proc *curproc = myproc();
+  // target pid of setPriority is the process itself.
+  if(curproc->pid == pid){
+    curproc->priority = priority;    
+    cprintf("setPriority successful | pid: %d, priority: %d\n", curproc->pid, curproc->priority);
+    return 0;
+  }
+
+  /*
+   * target pid of setPriority is not the process itself.
+   * priority setting privilege is restricted to itself and its' own child processes
+   */
   for(p = ptable.proc; p < &ptable.proc[NPROC]; p++){
     if(p->pid == pid){
-      p->priority = priority;    
-      //cprintf("setPriority successful | pid: %d, priority: %d\n", p->pid, p->priority);
-      return 0;
+      if(p->parent->pid == curproc->pid){
+        cprintf("setPriority successful | pid: %d, priority: %d\n", p->pid, p->priority);
+        p->priority = priority;    
+        return 0;
+      }
+      else {
+        panic("setPriority failed\n");
+        return -1;
+      }
     }
   }
-  panic("setPriority failed\n");
   //cprintf("setPriority failed | pid: %d, priority: %d\n", p->pid, p->priority);
   return -1;
 }

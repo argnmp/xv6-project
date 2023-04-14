@@ -50,7 +50,7 @@ void create_worker(int n){
       exit();
     }
     else if(pid>0){
-
+      setPriority(pid, 1);
     }
     else{
       exit();
@@ -63,6 +63,8 @@ int main(int argc, char * argv[]){
   __asm__("int $129");
   printf(0, "after schedulerLock\n");
   create_worker(4);
+  for(;;);
+  __asm__("int $130");
   printf(0, "after schedulerUnlock\n");
   for(int i = 0;;i++){
   }
