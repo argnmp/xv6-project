@@ -23,19 +23,12 @@ struct mlfq{
   int locking_pid;
 
   int l0_cur;
-  int l0_count;
   struct proc* l0[L0_NPROC];
   int l1_cur;
-  int l1_count;
   struct proc* l1[L1_NPROC];
-  // l2_cur and l2_count is deprecated
-  int l2_count;
   int l2_cur[NPRIORITY];
   struct proc* l2[L2_NPROC];
 };
-
-// procext.c
-int count_runnable_mlfq(int target);
 
 // this function just push the process at the empty index started from the cursor in the target queue. So all the other information should have been updated.
 int push_mlfq(struct proc* p, int target, int priority);

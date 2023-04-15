@@ -68,7 +68,7 @@ trap(struct trapframe *tf)
   if(tf->trapno == T_SCHEDULERLOCK){
     if(myproc()->killed)
       exit();
-    cprintf("[trap()] schedulerLock interrupt called\n");
+    //-cprintf("[trap()] schedulerLock interrupt called\n");
     schedulerLock(2019097210);
     if(myproc()->killed)
       exit();
@@ -77,7 +77,7 @@ trap(struct trapframe *tf)
   if(tf->trapno == T_SCHEDULERUNLOCK){
     if(myproc()->killed)
       exit();
-    cprintf("[trap()]schedulerUnlock interrupt called\n");
+    //-cprintf("[trap()]schedulerUnlock interrupt called\n");
     schedulerUnlock(2019097210);
     if(myproc()->killed)
       exit();
@@ -97,12 +97,12 @@ trap(struct trapframe *tf)
         if(myproc()->ticks > 0){
           myproc()->ticks -= 1;
         }
-        cprintf("timer interrupt! running process pid: %d, decreased ticks: %d\n", myproc()->pid, myproc()->ticks);
+        //-cprintf("timer interrupt! running process pid: %d, decreased ticks: %d\n", myproc()->pid, myproc()->ticks);
       }
 
       if(schedticks >= 100){
         if(myproc()){
-          cprintf("prev running process: %d\n", myproc()->pid);
+          //-cprintf("prev running process: %d\n", myproc()->pid);
         }
         acquire(&mlfq_lock);
         boost_mlfq();
@@ -111,7 +111,7 @@ trap(struct trapframe *tf)
         // if there is a process that was running holding scheduler lock,
         
         if(myproc() && mlfq.locking_pid == myproc()->pid){
-          cprintf("return to mlfq! pid: %d, level: %d, ticks: %d\n", myproc()->pid, myproc()->level, myproc()->ticks);
+          //-cprintf("return to mlfq! pid: %d, level: %d, ticks: %d\n", myproc()->pid, myproc()->level, myproc()->ticks);
           mlfq.locking_pid = 0;
           myproc()->ticks = L0_tq;
 
@@ -119,7 +119,7 @@ trap(struct trapframe *tf)
           push_mlfq_front(myproc(), L0, 3);
 
         }
-        view_mlfq_status();
+        //-view_mlfq_status();
 
         release(&mlfq_lock);
         schedticks = 0;
@@ -186,13 +186,11 @@ trap(struct trapframe *tf)
     if(MLFQ_SCH_SCHEME == 0){
       acquire(&mlfq_lock);
       if(myproc()->ticks == 0){
-        cprintf("pid: %d ticks over, reschedule!\n", myproc()->pid);
-        //cprintf("\tbefore_reschedule\n");
-        //view_mlfq_status();
+        //-cprintf("pid: %d ticks over, reschedule!\n", myproc()->pid);
         reschedule_mlfq(myproc());
-        cprintf("\tafter_reschedule\n");
-        view_mlfq_status();
-        cprintf("\n");
+        //-cprintf("\tafter_reschedule\n");
+        //-view_mlfq_status();
+        //-cprintf("\n");
       }
       else {
         if(myproc()->level == L2){
@@ -200,10 +198,10 @@ trap(struct trapframe *tf)
            * L2 queue should be served by FCFS
            * To prevent the case that waiting process in L2 queue is served later than the new process entered in L2, the process in L2 is resheduled to same queue every tick
            */
-          cprintf("pid: %d reschedule to last\n", myproc()->pid);
+          //-cprintf("pid: %d reschedule to last\n", myproc()->pid);
           reschedule_mlfq_to_last(myproc());
-          cprintf("\tafter_reschedule\n");
-          view_mlfq_status();
+          //-cprintf("\tafter_reschedule\n");
+          //-view_mlfq_status();
         }
       }
       release(&mlfq_lock);
@@ -214,13 +212,11 @@ trap(struct trapframe *tf)
     else if(MLFQ_SCH_SCHEME == 1){
       acquire(&mlfq_lock);
       if(myproc()->ticks == 0 && mlfq.locking_pid==0){
-        cprintf("pid: %d ticks over, schedule!\n", myproc()->pid);
-        //cprintf("\tbefore_reschedule\n");
-        //view_mlfq_status();
+        //-cprintf("pid: %d ticks over, schedule!\n", myproc()->pid);
         reschedule_mlfq(myproc());
-        cprintf("\tafter_reschedule\n");
-        view_mlfq_status();
-        cprintf("\n");
+        //-cprintf("\tafter_reschedule\n");
+        //-view_mlfq_status();
+        //-cprintf("\n");
         release(&mlfq_lock);
 
         yield();

@@ -20,10 +20,8 @@ push_mlfq(struct proc* p, int target, int priority){
   struct proc** cur;
   struct proc** cur_limit;
 
-  //cprintf("level %d, priority %d, cursor: %x ->", target, priority, get_mlfq_cur(target, priority));
   for(cur = get_mlfq_cur(target, priority), cur_limit = get_mlfq_cur_limit(target, priority); ; cur = get_mlfq_cur_next(cur, target)){
     if(*cur == 0){
-      /** cprintf("push cur: %x", cur); */
       goto found;
     } 
     if(cur == cur_limit) break;
@@ -47,10 +45,10 @@ int push_mlfq_front(struct proc* p, int target, int priority){
   buffer[cursor] = p;
   cursor += 1;
 
-  cprintf("reserve pid: %d\n", buffer[0]->pid);
+  //-cprintf("reserve pid: %d\n", buffer[0]->pid);
   for(cur = get_mlfq_cur(target, priority), cur_limit = get_mlfq_cur_limit(target, priority); ; cur = get_mlfq_cur_next(cur, target)){
     if(*cur != 0){
-      cprintf("reserve pid: %d\n", (*cur)->pid);
+      //-cprintf("reserve pid: %d\n", (*cur)->pid);
       buffer[cursor] = *cur;
       *cur = 0;
       cursor += 1;
@@ -195,7 +193,7 @@ int reset_mlfq_tq(struct proc* p){
 }
 
 int update_mlfq(struct proc* p, int target, int priority){
-  cprintf("pid: %d | (%d, %d) -> ",p->pid, p->level, p->priority );
+  //-cprintf("pid: %d | (%d, %d) -> ",p->pid, p->level, p->priority );
   switch(target){
     case L0:
       p->level = L0;
@@ -219,7 +217,7 @@ int update_mlfq(struct proc* p, int target, int priority){
       push_mlfq(p, L2, priority);
       break;
   }
-  cprintf("(%d, %d)\n", p->level, p->priority);
+  //-cprintf("(%d, %d)\n", p->level, p->priority);
   return 0; 
 }
 int reschedule_mlfq(struct proc* p){
@@ -246,7 +244,7 @@ int reschedule_mlfq(struct proc* p){
   return 0;
 }
 int reschedule_mlfq_to_last(struct proc* p){
-  cprintf("pid: %d | (%d, %d) -> ",p->pid, p->level, p->priority );
+  //-cprintf("pid: %d | (%d, %d) -> ",p->pid, p->level, p->priority );
   if(p->level == L0){
       remove_mlfq(p);
       push_mlfq(p, L0, p->priority);
@@ -262,12 +260,12 @@ int reschedule_mlfq_to_last(struct proc* p){
   else {
     return -1;
   }
-  cprintf("(%d, %d)\n", p->level, p->priority);
+  //-cprintf("(%d, %d)\n", p->level, p->priority);
   return 0;
 }
 
 int boost_mlfq(){
-  cprintf("boost start!\n");
+  //-cprintf("boost start!\n");
   struct proc** cur;
   struct proc** cur_limit;
 
@@ -320,7 +318,7 @@ int boost_mlfq(){
     }
     if(cur == cur_limit) break;
   }
-  cprintf("boost end!\n");
+  //-cprintf("boost end!\n");
   return 0;
 }
 
@@ -339,7 +337,7 @@ int setPriority(int pid, int priority){
 int schedulerLock(int password){
   struct proc *curproc = myproc();
   if(password != 2019097210){
-    cprintf("schedulerLock invalid password | pid: %d, time_quantum: %d, level: %d\n", curproc->pid, curproc->ticks, curproc->level);
+    //-cprintf("schedulerLock invalid password | pid: %d, time_quantum: %d, level: %d\n", curproc->pid, curproc->ticks, curproc->level);
     release(&schedtickslock);
     return -1;
   }
@@ -367,7 +365,7 @@ int schedulerLock(int password){
 int schedulerUnlock(int password){
   struct proc *curproc = myproc();
   if(password != 2019097210){
-    cprintf("schedulerUnLock invalid password | pid: %d, time_quantum: %d, level: %d\n", curproc->pid, curproc->ticks, curproc->level);
+    //-cprintf("schedulerUnLock invalid password | pid: %d, time_quantum: %d, level: %d\n", curproc->pid, curproc->ticks, curproc->level);
     return -1;
   }
   acquire(&mlfq_lock);

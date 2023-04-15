@@ -399,7 +399,6 @@ scheduler(void)
     for(cur = get_mlfq_cur(L0, PNONE), cur_limit = get_mlfq_cur_limit(L0, PNONE); ; cur = move_mlfq_cur(L0, PNONE)){
       if((*cur)!=0 && (*cur)->state == RUNNABLE){
         move_mlfq_cur(L0, PNONE);
-        //cprintf("found l0!\n");
         goto end;
       }
       // should move_mlfq_cur first
@@ -413,7 +412,6 @@ scheduler(void)
     for(cur = get_mlfq_cur(L1, PNONE), cur_limit = get_mlfq_cur_limit(L1, PNONE); ; cur = move_mlfq_cur(L1, PNONE)){
       if((*cur)!=0 && (*cur)->state == RUNNABLE){
         move_mlfq_cur(L1, PNONE);
-        //cprintf("found l1!\n");
         goto end;
       }
 
@@ -428,7 +426,6 @@ scheduler(void)
     for(cur = get_mlfq_cur(L2, P0), cur_limit = get_mlfq_cur_limit(L2, P0); ; cur = move_mlfq_cur(L2, P0)){
       if((*cur)!=0 && (*cur)->priority == P0 && (*cur)->state == RUNNABLE){
         move_mlfq_cur(L2, P0);
-        //cprintf("found l2 p0!\n");
         goto end;
       }
 
@@ -442,7 +439,6 @@ scheduler(void)
     for(cur = get_mlfq_cur(L2, P1), cur_limit = get_mlfq_cur_limit(L2, P1); ; cur = move_mlfq_cur(L2, P1)){
       if((*cur)!=0 && (*cur)->priority == P1 && (*cur)->state == RUNNABLE){
         move_mlfq_cur(L2, P1);
-        //cprintf("found l2 p1!\n");
         goto end;
       }
 
@@ -455,7 +451,6 @@ scheduler(void)
     for(cur = get_mlfq_cur(L2, P2), cur_limit = get_mlfq_cur_limit(L2, P2); ; cur = move_mlfq_cur(L2, P2)){
       if((*cur)!=0 && (*cur)->priority == P2 && (*cur)->state == RUNNABLE){
         move_mlfq_cur(L2, P2);
-        //cprintf("found l2 p2!\n");
         goto end;
       }
 
@@ -468,7 +463,6 @@ scheduler(void)
     for(cur = get_mlfq_cur(L2, P3), cur_limit = get_mlfq_cur_limit(L2, P3); ; cur = move_mlfq_cur(L2, P3)){
       if((*cur)!=0 && (*cur)->priority == P3 && (*cur)->state == RUNNABLE){
         move_mlfq_cur(L2, P3);
-        //cprintf("found l2 p3!\n");
         goto end;
       }
       // no runnable process exists
@@ -481,7 +475,7 @@ scheduler(void)
     goto terminate;
 
 end:
-    cprintf("found process %d, left ticks %d\n", (*cur)->pid,(*cur)->ticks);
+    //-cprintf("found process %d, left ticks %d\n", (*cur)->pid,(*cur)->ticks);
     c->proc = (*cur);
     switchuvm(*cur);
     (*cur)->state = RUNNING;
@@ -697,7 +691,7 @@ proc_setPriority(int pid, int priority){
   // target pid of setPriority is the process itself.
   if(curproc->pid == pid){
     curproc->priority = priority;    
-    cprintf("setPriority successful | pid: %d, priority: %d\n", curproc->pid, curproc->priority);
+    //-cprintf("setPriority successful | pid: %d, priority: %d\n", curproc->pid, curproc->priority);
     return 0;
   }
 
@@ -708,7 +702,7 @@ proc_setPriority(int pid, int priority){
   for(p = ptable.proc; p < &ptable.proc[NPROC]; p++){
     if(p->pid == pid){
       if(p->parent->pid == curproc->pid){
-        cprintf("setPriority successful | pid: %d, priority: %d\n", p->pid, p->priority);
+        //-cprintf("setPriority successful | pid: %d, priority: %d\n", p->pid, p->priority);
         p->priority = priority;    
         return 0;
       }
