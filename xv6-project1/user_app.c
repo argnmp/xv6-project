@@ -44,13 +44,19 @@ void create_worker(int n){
   for(int i = 0; i<n; i++){
     int pid = fork();
     if(pid==0){
-      for(;;){
-        //printf(0, "pid: %d\n", getpid());
+       
+      //printf(0, "pid: %d\n", getpid());
+      for(int k = 0; k<1000000; k++){
+        printf(0,"");
       }
+
+      schedulerLock(2019097210);
+      printf(0, "finish process sequence i: %d\n", i);
+      schedulerUnlock(2019097210);
       exit();
     }
     else if(pid>0){
-      setPriority(pid, 1);
+      //setPriority(pid, 1);
     }
     else{
       exit();
@@ -62,14 +68,11 @@ int main(int argc, char * argv[]){
   //schedulerLock(2019097210);
   __asm__("int $129");
   printf(0, "after schedulerLock\n");
-  create_worker(4);
-  for(;;);
+  create_worker(61);
   __asm__("int $130");
   printf(0, "after schedulerUnlock\n");
-  for(int i = 0;;i++){
-  }
   //schedulerUnlock(2019097210);
-  for(int i = 0; i<200; i++){
+  for(int i = 0; i<62; i++){
     wait();
   }
   exit();

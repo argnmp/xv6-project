@@ -8,16 +8,17 @@ int sys_yield(void){
 int sys_getLevel(void){
   return getLevel(); 
 }
-int sys_setPriority(void){
+void sys_setPriority(void){
   int pid;
   int priority;
   if(argint(0, &pid) < 0)
-    return -1;
+    exit();
   if(argint(1, &priority) < 0)
-    return -1;
+    exit();
   if(priority < P0 || priority > P3)
-    return -1;
-  return setPriority(pid, priority);  
+    exit();
+  int res = setPriority(pid, priority);  
+  if(res == -1) exit();
 }
 void sys_schedulerLock(void){
   int password; 

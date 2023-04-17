@@ -479,6 +479,7 @@ end:
     c->proc = (*cur);
     switchuvm(*cur);
     (*cur)->state = RUNNING;
+
     // because the selected process is scheduled in the same queue, give the time quantum according to the queue;
     
     if(MLFQ_SCH_SCHEME==0){

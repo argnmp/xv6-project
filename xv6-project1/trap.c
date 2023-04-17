@@ -186,11 +186,11 @@ trap(struct trapframe *tf)
     if(MLFQ_SCH_SCHEME == 0){
       acquire(&mlfq_lock);
       if(myproc()->ticks == 0){
-        //-cprintf("pid: %d ticks over, reschedule!\n", myproc()->pid);
+        //cprintf("pid: %d ticks over, reschedule!\n", myproc()->pid);
         reschedule_mlfq(myproc());
-        //-cprintf("\tafter_reschedule\n");
-        //-view_mlfq_status();
-        //-cprintf("\n");
+        //cprintf("\tafter_reschedule\n");
+        //view_mlfq_status();
+        //cprintf("\n");
       }
       else {
         if(myproc()->level == L2){
@@ -198,10 +198,10 @@ trap(struct trapframe *tf)
            * L2 queue should be served by FCFS
            * To prevent the case that waiting process in L2 queue is served later than the new process entered in L2, the process in L2 is resheduled to same queue every tick
            */
-          //-cprintf("pid: %d reschedule to last\n", myproc()->pid);
+          //cprintf("pid: %d reschedule to last\n", myproc()->pid);
           reschedule_mlfq_to_last(myproc());
-          //-cprintf("\tafter_reschedule\n");
-          //-view_mlfq_status();
+          //cprintf("\tafter_reschedule\n");
+          //view_mlfq_status();
         }
       }
       release(&mlfq_lock);
