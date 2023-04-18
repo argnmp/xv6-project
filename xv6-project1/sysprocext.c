@@ -25,12 +25,17 @@ void sys_schedulerLock(void){
   if(argint(0, &password) < 0)
     exit();
   int res = schedulerLock(password);
-  if(res == -1) exit();
+  if(res == -1){
+    cprintf("other process is holding scheduler lock");
+  }
+  else if(res == 1){
+    exit();
+  }
 }
 void sys_schedulerUnlock(void){
   int password;
   if(argint(0, &password) < 0)
     exit();
   int res = schedulerUnlock(password);
-  if(res == -1) exit();
+  if(res == 1) exit();
 }

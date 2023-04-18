@@ -337,9 +337,10 @@ int setPriority(int pid, int priority){
 int schedulerLock(int password){
   struct proc *curproc = myproc();
   if(password != 2019097210){
-    //-cprintf("schedulerLock invalid password | pid: %d, time_quantum: %d, level: %d\n", curproc->pid, curproc->ticks, curproc->level);
+    acquire(&schedtickslock);
+    cprintf("schedulerLock invalid password | pid: %d, time_quantum: %d, level: %d\n", curproc->pid, curproc->ticks, curproc->level);
     release(&schedtickslock);
-    return -1;
+    return 1;
   }
 
   acquire(&mlfq_lock);
@@ -365,8 +366,10 @@ int schedulerLock(int password){
 int schedulerUnlock(int password){
   struct proc *curproc = myproc();
   if(password != 2019097210){
-    //-cprintf("schedulerUnLock invalid password | pid: %d, time_quantum: %d, level: %d\n", curproc->pid, curproc->ticks, curproc->level);
-    return -1;
+    acquire(&schedtickslock);
+    cprintf("schedulerUnLock invalid password | pid: %d, time_quantum: %d, level: %d\n", curproc->pid, curproc->ticks, curproc->level);
+    release(&schedtickslock);
+    return 1;
   }
   acquire(&mlfq_lock);
   if(mlfq.locking_pid != 0 && mlfq.locking_pid == curproc->pid){

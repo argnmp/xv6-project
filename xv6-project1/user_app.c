@@ -65,13 +65,11 @@ void create_worker(int n){
 }
 int main(int argc, char * argv[]){
   printf(0,"start function\n");
-  //schedulerLock(2019097210);
-  __asm__("int $129");
+  schedulerLock(209097210);
   printf(0, "after schedulerLock\n");
-  create_worker(61);
-  __asm__("int $130");
-  printf(0, "after schedulerUnlock\n");
-  //schedulerUnlock(2019097210);
+  create_worker(3);
+  printf(0, "before schedulerUnlock\n");
+  schedulerUnlock(2019097210);
   for(int i = 0; i<62; i++){
     wait();
   }
