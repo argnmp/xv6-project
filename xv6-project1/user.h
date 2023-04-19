@@ -24,7 +24,7 @@ char* sbrk(int);
 int sleep(int);
 int uptime(void);
 //+
-int yield();
+void yield();
 int getLevel(void);
 int setPriority(int, int);
 void schedulerLock(int);

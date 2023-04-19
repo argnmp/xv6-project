@@ -1,9 +1,8 @@
 #include "types.h"
 #include "defs.h"
 #include "procext.h"
-int sys_yield(void){
+void sys_yield(void){
   yield();
-  return 0;
 }
 int sys_getLevel(void){
   return getLevel(); 

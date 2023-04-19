@@ -338,7 +338,17 @@ int schedulerLock(int password){
   struct proc *curproc = myproc();
   if(password != 2019097210){
     acquire(&schedtickslock);
-    cprintf("schedulerLock invalid password | pid: %d, time_quantum: %d, level: %d\n", curproc->pid, curproc->ticks, curproc->level);
+    int used_ticks;
+    if(curproc->level == L0){
+      used_ticks = 4 - curproc->ticks;
+    }
+    else if(curproc->level == L1){
+      used_ticks = 6 - curproc->ticks;
+    }
+    else {
+      used_ticks = 8 - curproc->ticks;
+    }
+    cprintf("schedulerLock invalid password | pid: %d, time_quantum: %d, level: %d\n", curproc->pid, used_ticks, curproc->level);
     release(&schedtickslock);
     return 1;
   }
@@ -367,7 +377,17 @@ int schedulerUnlock(int password){
   struct proc *curproc = myproc();
   if(password != 2019097210){
     acquire(&schedtickslock);
-    cprintf("schedulerUnLock invalid password | pid: %d, time_quantum: %d, level: %d\n", curproc->pid, curproc->ticks, curproc->level);
+    int used_ticks;
+    if(curproc->level == L0){
+      used_ticks = 4 - curproc->ticks;
+    }
+    else if(curproc->level == L1){
+      used_ticks = 6 - curproc->ticks;
+    }
+    else {
+      used_ticks = 8 - curproc->ticks;
+    }
+    cprintf("schedulerUnLock invalid password | pid: %d, time_quantum: %d, level: %d\n", curproc->pid, used_ticks, curproc->level);
     release(&schedtickslock);
     return 1;
   }
