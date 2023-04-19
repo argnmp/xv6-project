@@ -13,7 +13,6 @@ struct {
   struct proc proc[NPROC];
 } ptable;
 
-//+
 // trap.c : use schedticks defined in trap.c
 extern uint schedticks;
 extern struct spinlock schedtickslock;
@@ -98,7 +97,9 @@ found:
   p->state = EMBRYO;
   p->pid = nextpid++;
 
-  //+
+  /*
+   * push the newly allocated process to the mlfq L0 queue for scheduling
+   */
   p->level = L0;
   p->ticks = L0_tq;
   p->priority = P3;
@@ -279,6 +280,8 @@ exit(void)
 
   // Jump into the scheduler, never to return.
   curproc->state = ZOMBIE;
+
+  // unlock the scheduler lock if the process was holding the scheduler lock
   schedulerUnlock(2019097210);
   sched();
   panic("zombie exit");
@@ -313,7 +316,10 @@ wait(void)
         p->killed = 0;
         p->state = UNUSED;
 
-        //+
+        /*
+         * terminated process is removed by the parent process
+         * so remove the process from mlfq.
+         */
         remove_mlfq(p); 
 
         release(&ptable.lock);
@@ -341,6 +347,8 @@ wait(void)
 //  - swtch to start running that process
 //  - eventually that process transfers control
 //      via swtch back to the scheduler.
+
+/*
 void
 xscheduler(void)
 {
@@ -380,8 +388,12 @@ xscheduler(void)
 
   }
 }
+*/
 
-//+
+
+/*
+ * new scheduler for mlfq
+ */
 void
 scheduler(void)
 {
@@ -395,37 +407,40 @@ scheduler(void)
     sti();
     acquire(&ptable.lock);
 
-    // serve processes in L0
+    // find runnable processes in L0
     for(cur = get_mlfq_cur(L0, PNONE), cur_limit = get_mlfq_cur_limit(L0, PNONE); ; cur = move_mlfq_cur(L0, PNONE)){
       if((*cur)!=0 && (*cur)->state == RUNNABLE){
         move_mlfq_cur(L0, PNONE);
+        // go to end if it found one
         goto end;
       }
-      // should move_mlfq_cur first
+      // no runnable process exists
       if(cur == cur_limit) {
         move_mlfq_cur(L0, PNONE);
         break;
       }
     }
 
-    // serve processes in L1
+    // find runnable processes in L1
     for(cur = get_mlfq_cur(L1, PNONE), cur_limit = get_mlfq_cur_limit(L1, PNONE); ; cur = move_mlfq_cur(L1, PNONE)){
       if((*cur)!=0 && (*cur)->state == RUNNABLE){
         move_mlfq_cur(L1, PNONE);
+        // go to end if it found one
         goto end;
       }
 
-      // should move_mlfq_cur first
+      // no runnable process exists
       if(cur == cur_limit) {
         move_mlfq_cur(L1, PNONE);
         break;
       }
     }
 
-    // serve processes in L2, P0
+    // find runnable processes in L2, which priority is 0
     for(cur = get_mlfq_cur(L2, P0), cur_limit = get_mlfq_cur_limit(L2, P0); ; cur = move_mlfq_cur(L2, P0)){
       if((*cur)!=0 && (*cur)->priority == P0 && (*cur)->state == RUNNABLE){
         move_mlfq_cur(L2, P0);
+        // go to end if it found one
         goto end;
       }
 
@@ -435,10 +450,11 @@ scheduler(void)
         break;
       }
     }
-    // serve processes in L2, P1
+    // find runnable processes in L2, which priority is 1
     for(cur = get_mlfq_cur(L2, P1), cur_limit = get_mlfq_cur_limit(L2, P1); ; cur = move_mlfq_cur(L2, P1)){
       if((*cur)!=0 && (*cur)->priority == P1 && (*cur)->state == RUNNABLE){
         move_mlfq_cur(L2, P1);
+        // go to end if it found one
         goto end;
       }
 
@@ -448,9 +464,11 @@ scheduler(void)
         break;
       }
     }
+    // find runnable process in L2, which priority is 2
     for(cur = get_mlfq_cur(L2, P2), cur_limit = get_mlfq_cur_limit(L2, P2); ; cur = move_mlfq_cur(L2, P2)){
       if((*cur)!=0 && (*cur)->priority == P2 && (*cur)->state == RUNNABLE){
         move_mlfq_cur(L2, P2);
+        // go to end if it found one
         goto end;
       }
 
@@ -460,9 +478,11 @@ scheduler(void)
         break;
       }
     }
+    // find runnable process in L2, which priority is 3
     for(cur = get_mlfq_cur(L2, P3), cur_limit = get_mlfq_cur_limit(L2, P3); ; cur = move_mlfq_cur(L2, P3)){
       if((*cur)!=0 && (*cur)->priority == P3 && (*cur)->state == RUNNABLE){
         move_mlfq_cur(L2, P3);
+        // go to end if it found one
         goto end;
       }
       // no runnable process exists
@@ -472,6 +492,7 @@ scheduler(void)
       }
     }
     
+    // there are no runnable process in mlfq
     goto terminate;
 
 end:
@@ -486,6 +507,9 @@ end:
 
     }
     else if(MLFQ_SCH_SCHEME==1){
+      /*
+       * branch for additional implementation
+       */
       reset_mlfq_tq(*cur);
     }
 
@@ -532,6 +556,8 @@ yield(void)
 {
   acquire(&ptable.lock);  //DOC: yieldlock
   myproc()->state = RUNNABLE;
+
+  // unlock the scheduler, if the process is holding scheduler lock
   schedulerUnlock(2019097210);
   sched();
   release(&ptable.lock);
@@ -585,6 +611,7 @@ sleep(void *chan, struct spinlock *lk)
   p->chan = chan;
   p->state = SLEEPING;
   
+  // unlock the scheduler, if the process is holding scheduler lock
   schedulerUnlock(2019097210);
 
   sched();
@@ -640,7 +667,6 @@ kill(int pid)
       return 0;
     }
   }
-  schedulerUnlock(2019097210);
   release(&ptable.lock);
   return -1;
 }
@@ -682,9 +708,8 @@ procdump(void)
   }
 }
 
-//+
-// this is an function that is used in procext.c to use ptable
-// use setPriority function defined in procext.h
+// setPriority system call implementation
+// proc_setPriority is called by setPriority in procext.c to use ptable
 int
 proc_setPriority(int pid, int priority){
   struct proc *p;

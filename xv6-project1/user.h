@@ -23,7 +23,8 @@ int getpid(void);
 char* sbrk(int);
 int sleep(int);
 int uptime(void);
-//+
+
+// newly implemented system calls
 void yield();
 int getLevel(void);
 int setPriority(int, int);

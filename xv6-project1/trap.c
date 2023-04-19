@@ -15,6 +15,10 @@ extern uint vectors[];  // in vectors.S: array of 256 entry pointers
                         
 struct spinlock tickslock;
 uint ticks;
+
+/*
+ * newly defined ticks that records 100 ticks
+ */
 struct spinlock schedtickslock;
 uint schedticks;
 
@@ -64,6 +68,10 @@ trap(struct trapframe *tf)
       exit();
     return;
   }
+
+  /*
+   * interrupt 128, 129
+   */
   
   if(tf->trapno == T_SCHEDULERLOCK){
     if(myproc()->killed)
@@ -93,6 +101,7 @@ trap(struct trapframe *tf)
       acquire(&schedtickslock);
       schedticks++;
 
+      // decrease the left time quantum of running process before interrupt
       if(myproc()){
         if(myproc()->ticks > 0){
           myproc()->ticks -= 1;
@@ -100,18 +109,21 @@ trap(struct trapframe *tf)
         //-cprintf("timer interrupt! running process pid: %d, decreased ticks: %d\n", myproc()->pid, myproc()->ticks);
       }
 
+      // if schedticks reaches 100, execute priority boost
       if(schedticks >= 100){
-        if(myproc()){
-          //-cprintf("prev running process: %d\n", myproc()->pid);
-        }
+
+        // acquire mlfq_lock for synchronization
         acquire(&mlfq_lock);
+        
+        // priority boost
         boost_mlfq();
 
-        // schedticks reaches 100
         // if there is a process that was running holding scheduler lock,
-        
+        // unlock the scheduler lock
         if(myproc() && mlfq.locking_pid == myproc()->pid){
           //-cprintf("return to mlfq! pid: %d, level: %d, ticks: %d\n", myproc()->pid, myproc()->level, myproc()->ticks);
+
+          // reset the ticks and move to the front of L0
           mlfq.locking_pid = 0;
           myproc()->ticks = L0_tq;
 
@@ -184,8 +196,15 @@ trap(struct trapframe *tf)
 
     
     if(MLFQ_SCH_SCHEME == 0){
+      /*
+       * specification implementation branch
+       */
       acquire(&mlfq_lock);
       if(myproc()->ticks == 0){
+        /*
+         * reschedule the process if it used all of its allocated time quantum
+         */
+
         //cprintf("pid: %d ticks over, reschedule!\n", myproc()->pid);
         reschedule_mlfq(myproc());
         //cprintf("\tafter_reschedule\n");
@@ -198,6 +217,7 @@ trap(struct trapframe *tf)
            * L2 queue should be served by FCFS
            * To prevent the case that waiting process in L2 queue is served later than the new process entered in L2, the process in L2 is resheduled to same queue every tick
            */
+
           //cprintf("pid: %d reschedule to last\n", myproc()->pid);
           reschedule_mlfq_to_last(myproc());
           //cprintf("\tafter_reschedule\n");
@@ -205,12 +225,21 @@ trap(struct trapframe *tf)
         }
       }
       release(&mlfq_lock);
+      
+      // yield if no process holds scheduler lock
       if(mlfq.locking_pid == 0){
         yield();
       }
     }
     else if(MLFQ_SCH_SCHEME == 1){
+      /*
+       * additional implemetation branch
+       */
       acquire(&mlfq_lock);
+
+      /*
+       * this additional implementation holds the cpu until it used all of its time quantum
+       */
       if(myproc()->ticks == 0 && mlfq.locking_pid==0){
         //-cprintf("pid: %d ticks over, schedule!\n", myproc()->pid);
         reschedule_mlfq(myproc());

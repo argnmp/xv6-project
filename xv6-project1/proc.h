@@ -50,7 +50,6 @@ struct proc {
   struct inode *cwd;           // Current directory
   char name[16];               // Process name (debugging)
 
-  //+
   struct proc** mlfq_pos;      // process position in mlfq
   int level;                   // process queue level in mlfq 0 or 1 or 2
   int ticks;                   // to check if a process should yield or not. it decreases every timer interrupt occcurs
