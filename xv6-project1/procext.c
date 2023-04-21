@@ -415,13 +415,13 @@ int schedulerLock(int password){
     acquire(&schedtickslock);
     int used_ticks;
     if(curproc->level == L0){
-      used_ticks = 4 - curproc->ticks;
+      used_ticks = 4 - curproc->ticks + 1;
     }
     else if(curproc->level == L1){
-      used_ticks = 6 - curproc->ticks;
+      used_ticks = 6 - curproc->ticks + 1;
     }
     else {
-      used_ticks = 8 - curproc->ticks;
+      used_ticks = 8 - curproc->ticks + 1;
     }
     // print the pid, time quantum, level
     cprintf("schedulerLock invalid password | pid: %d, time_quantum: %d, level: %d\n", curproc->pid, used_ticks, curproc->level);
@@ -466,16 +466,16 @@ int schedulerUnlock(int password){
     acquire(&schedtickslock);
     int used_ticks;
     if(curproc->level == L0){
-      used_ticks = 4 - curproc->ticks;
+      used_ticks = 4 - curproc->ticks + 1;
     }
     else if(curproc->level == L1){
-      used_ticks = 6 - curproc->ticks;
+      used_ticks = 6 - curproc->ticks + 1;
     }
     else {
-      used_ticks = 8 - curproc->ticks;
+      used_ticks = 8 - curproc->ticks + 1;
     }
     // print the pid, time quantum, level
-    cprintf("schedulerUnLock invalid password | pid: %d, time_quantum: %d, level: %d\n", curproc->pid, used_ticks, curproc->level);
+    cprintf("schedulerUnlock invalid password | pid: %d, time_quantum: %d, level: %d\n", curproc->pid, used_ticks, curproc->level);
     release(&schedtickslock);
     return 1;
   }
