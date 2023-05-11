@@ -49,6 +49,7 @@ struct proc {
   struct file *ofile[NOFILE];  // Open files
   struct inode *cwd;           // Current directory
   char name[16];               // Process name (debugging)
+  uint sz_limit;               // determines upper limit size of memory allocation to process, 0 means infinite
 };
 
 // Process memory is laid out contiguously, low addresses first:

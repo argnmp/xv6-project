@@ -88,6 +88,7 @@ allocproc(void)
 found:
   p->state = EMBRYO;
   p->pid = nextpid++;
+  p->sz_limit = 0;
 
   release(&ptable.lock);
 
@@ -158,10 +159,18 @@ userinit(void)
 int
 growproc(int n)
 {
+  cprintf("growproc called n:%d\n", n);
   uint sz;
+  uint sz_limit;
   struct proc *curproc = myproc();
 
   sz = curproc->sz;
+  sz_limit = curproc->sz_limit;
+  // check if requested memory exceeds memory limit of process
+  if(sz_limit!=0 && sz+n > sz_limit){
+    cprintf("n: %d, sz: %d, sz_limit: %d, limit exceed\n", n, sz, sz_limit);
+    return -1;
+  }
   if(n > 0){
     if((sz = allocuvm(curproc->pgdir, sz, sz + n)) == 0)
       return -1;
@@ -492,6 +501,42 @@ kill(int pid)
       return 0;
     }
   }
+  release(&ptable.lock);
+  return -1;
+}
+
+/*
+ * set memory allocation limit of a process
+ */
+int
+setmemorylimit(int pid, int limit){
+  struct proc *p;
+
+  acquire(&ptable.lock);
+
+  for(p = ptable.proc; p < &ptable.proc[NPROC]; p++){
+    if(p->pid == pid){
+      if(limit == 0){
+        // if limit == 0, set limit to infinite(sz_limit: 0)
+        p->sz_limit = 0;
+      }
+      else {
+        // check if the limit is smaller than pre-allocated memory
+        if(limit < p->sz){
+          release(&ptable.lock);
+          return -1;
+        }
+        // set sz_limit to limit
+        p->sz_limit = limit;
+      }
+      cprintf("sml -> pid: %d | sz: %d | sz_limit:%d \n",pid, p->sz, p->sz_limit);
+
+      release(&ptable.lock);
+      return 0;
+    }
+  }
+
+  // pid doesn't exist. return -1
   release(&ptable.lock);
   return -1;
 }

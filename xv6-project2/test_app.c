@@ -6,7 +6,7 @@ int main(int argc, char * argv[]){
   int i = fork();
   if(i==0){
     char *argv[1] = {"sub_app"};
-    exec2(argv[0], argv, 10);
+    exec2(argv[0], argv, 2);
     printf(1, "exec failed\n");
   }
   wait();
