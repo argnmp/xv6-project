@@ -9,10 +9,12 @@
 } */
 
 int main(int argc, char * argv[]){
-  printf(1, "This is sub program\n");
-  for(int i = 0; i<10; i++){
-    int res = setmemorylimit(getpid(), 16384 + i);
-    printf(1, "malloc setmemorylimit res: %d\n", res);
+  struct proc_info_s pinfos;
+  int res = procinfo(&pinfos);
+  if(res == 0){
+    for(int i = 0; i<pinfos.pcount; i++){
+      printf(1, "pid: %d | ssz: %d | sz: %d | sz_limit: %d \n", pinfos.proc_arr[i].pid, pinfos.proc_arr[i].ssz, pinfos.proc_arr[i].sz, pinfos.proc_arr[i].sz_limit);
+    } 
   }
   exit();
 }

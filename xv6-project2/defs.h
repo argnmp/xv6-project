@@ -122,6 +122,7 @@ int             wait(void);
 void            wakeup(void*);
 void            yield(void);
 int             setmemorylimit(int, int);
+int             procinfo(struct proc_info_s*);
 
 // swtch.S
 void            swtch(struct context**, struct context*);

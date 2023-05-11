@@ -541,6 +541,30 @@ setmemorylimit(int pid, int limit){
   return -1;
 }
 
+/*
+ * get all process informations
+ */
+int
+procinfo(struct proc_info_s* pinfos){
+  struct proc *p;
+  memset(pinfos->proc_arr, 0, sizeof(pinfos->proc_arr)); 
+  pinfos->pcount = 0;
+
+  acquire(&ptable.lock);
+  for(p = ptable.proc; p < &ptable.proc[NPROC]; p++){
+    if(p->state != UNUSED){
+      pinfos->proc_arr[pinfos->pcount].pid = p->pid;
+      pinfos->proc_arr[pinfos->pcount].ssz = p->ssz;
+      pinfos->proc_arr[pinfos->pcount].sz = p->sz;
+      pinfos->proc_arr[pinfos->pcount].sz_limit = p->sz_limit;
+      pinfos->pcount += 1;
+    }
+  }
+  release(&ptable.lock);
+  
+  return 0;
+}
+
 //PAGEBREAK: 36
 // Print a process listing to console.  For debugging.
 // Runs when user types ^P on console.

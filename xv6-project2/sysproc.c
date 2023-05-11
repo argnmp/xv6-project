@@ -104,3 +104,11 @@ sys_setmemorylimit(void){
   return setmemorylimit(pid, limit);
 }
 
+int
+sys_procinfo(void){
+  struct proc_info_s* pinfos; 
+  if(argptr(0, (char**) &pinfos, sizeof(struct proc_info_s) < 0)){
+    return -1;
+  }
+  return procinfo(pinfos);
+}

@@ -25,6 +25,7 @@ int sleep(int);
 int uptime(void);
 int exec2(char*, char**, int);
 int setmemorylimit(int, int);
+int procinfo(struct proc_info_s*);
 
 // ulib.c
 int stat(const char*, struct stat*);
