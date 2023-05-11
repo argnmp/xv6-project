@@ -90,6 +90,7 @@ sys_uptime(void)
   return xticks;
 }
 
+//wrapper function for setmemorylimit syscall
 int
 sys_setmemorylimit(void){
   int pid;
@@ -104,6 +105,7 @@ sys_setmemorylimit(void){
   return setmemorylimit(pid, limit);
 }
 
+//wrapper function for sys_procinfo syscall
 int
 sys_procinfo(void){
   struct proc_info_s* pinfos; 

@@ -159,7 +159,6 @@ userinit(void)
 int
 growproc(int n)
 {
-  cprintf("growproc called n:%d\n", n);
   uint sz;
   uint sz_limit;
   struct proc *curproc = myproc();
@@ -168,7 +167,7 @@ growproc(int n)
   sz_limit = curproc->sz_limit;
   // check if requested memory exceeds memory limit of process
   if(sz_limit!=0 && sz+n > sz_limit){
-    cprintf("n: %d, sz: %d, sz_limit: %d, limit exceed\n", n, sz, sz_limit);
+    //cprintf("n: %d, sz: %d, sz_limit: %d, limit exceed\n", n, sz, sz_limit);
     return -1;
   }
   if(n > 0){
