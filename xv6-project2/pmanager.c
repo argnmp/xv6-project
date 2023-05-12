@@ -26,9 +26,6 @@ int listcmd(){
   }
   return 0;
 }
-int killcmd(int pid){
-  return kill(pid);
-} 
 int run(struct args_s* args){
   if(strcmp(args->arg[0], "list")==0){
     int res = listcmd(); 
@@ -37,10 +34,56 @@ int run(struct args_s* args){
     }
   }
   else if(strcmp(args->arg[0], "kill")==0){
+    if(strcmp(args->arg[1], "")==0){
+      return 0; 
+    }
+
     int pid = atoi(args->arg[1]); 
     int res = kill(pid);
+    if(res==0){
+      printf(1, "kill pid %d succeeded\n", pid);
+    }
     if(res < 0){
       printf(1, "kill pid %d failed\n", pid);
+    }
+  }
+  else if(strcmp(args->arg[0], "execute")==0){
+    // check path is empty
+    if(strcmp(args->arg[1], "")==0 || strcmp(args->arg[2], "")==0){
+      return 0; 
+    }
+    int pid;
+    pid = fork();
+    char* execargv[10]; 
+    char path[100] = {0,};
+    strcpy(path, args->arg[1]); 
+    execargv[0] = path;
+
+    int stacksize = atoi(args->arg[2]);
+    if(pid==0){
+      int res = exec2(execargv[0], execargv, stacksize); 
+      if(res < 0){
+        printf(1, "execute failed\n");
+        exit();
+      }
+    }
+    else if(pid < 0){
+      printf(1, "execute failed\n");
+    }
+  }
+  else if(strcmp(args->arg[0], "memlim")==0){
+    // check path is empty
+    if(strcmp(args->arg[1], "")==0 || strcmp(args->arg[2], "")==0){
+      return 0; 
+    }
+    int t_pid = atoi(args->arg[1]);
+    int t_limit = atoi(args->arg[2]);
+    int res = setmemorylimit(t_pid, t_limit);
+    if(res==0){
+      printf(1, "memlim succeeded\n");
+    }
+    else{
+      printf(1, "memlim failed\n");
     }
   }
   else if(strcmp(args->arg[0], "exit")==0){
