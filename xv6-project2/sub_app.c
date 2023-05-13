@@ -8,7 +8,12 @@
   recall(n+1);
 } */
 
+void* print_hello(void* args){
+  return (void*)(10*(*(int*)args));
+}
 int main(int argc, char * argv[]){
-  for(;;);
+  thread_t tid = 777;
+  int arg = 123;
+  thread_create(&tid, print_hello, &arg);
   exit();
 }

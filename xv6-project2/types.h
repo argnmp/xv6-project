@@ -15,3 +15,8 @@ struct proc_info_s{
   } proc_arr[64];
   int pcount;
 };
+
+/*
+ * thread identifier
+ */
+typedef int thread_t;

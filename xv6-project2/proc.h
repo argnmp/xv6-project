@@ -34,6 +34,12 @@ struct context {
 
 enum procstate { UNUSED, EMBRYO, SLEEPING, RUNNABLE, RUNNING, ZOMBIE };
 
+// store data for thread
+struct thread{
+  int tid; // Thread ID, -1 means main thread(process itself)
+  struct proc* next_thread; // connects threads belongs to a process
+};
+
 // Per-process state
 struct proc {
   uint sz;                     // Size of process memory (bytes)
@@ -51,6 +57,8 @@ struct proc {
   char name[16];               // Process name (debugging)
   uint ssz;                    // stack size
   uint sz_limit;               // determines upper limit size of memory allocation to process, 0 means infinite
+
+  struct thread th;
 };
 
 // Process memory is laid out contiguously, low addresses first:
