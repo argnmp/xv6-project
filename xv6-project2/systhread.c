@@ -26,7 +26,10 @@ int sys_thread_create(void){
   }
   // cprintf("%d, %d, %d \n", *thread, start_routine, *(int*)arg);  
   // cprintf("%d", (int)start_routine(arg));
-  return 0; 
+  //start_routine(arg);
+  int res = thread_create(thread, start_routine, arg);
+  //procdump();
+  return res;
 }
 void sys_thread_exit(void){
   void* retval;

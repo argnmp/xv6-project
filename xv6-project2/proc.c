@@ -89,6 +89,10 @@ found:
   p->state = EMBRYO;
   p->pid = nextpid++;
   p->sz_limit = 0;
+  // basic tid is set to -1, which means process itself
+  p->th.tid = -1;
+  p->th.main = p;
+  p->th.next = 0;
 
   release(&ptable.lock);
 
@@ -600,3 +604,142 @@ procdump(void)
     cprintf("\n");
   }
 }
+
+/*
+ * thread implementation
+ */
+
+// global thread id
+int nexttid = 1;
+
+/*
+ * allocate thread that fits to ptable
+ */
+// static struct proc*
+// allocthread(struct proc* prev_thread, void *(*start_routine)(void *))
+// {
+//   struct proc *p;
+//   char *sp;
+//
+//   acquire(&ptable.lock);
+//
+//   for(p = ptable.proc; p < &ptable.proc[NPROC]; p++)
+//     if(p->state == UNUSED)
+//       goto found;
+//
+//   release(&ptable.lock);
+//   return 0;
+//
+// found:
+//   p->state = EMBRYO;
+//   // share pid among threads
+//   p->pid = prev_thread->pid;
+//   p->sz_limit = 0;
+//   // basic tid is set to -1, which means process itself
+//   p->th.tid = nexttid++;
+//   p->th.next = 0;
+//   // link thread
+//   p->th.main = prev_thread->th.main;
+//   prev_thread->th.next = p;
+//
+//   release(&ptable.lock);
+//
+//   // allocate independent kernel stack for context switching
+//   if((p->kstack = kalloc()) == 0){
+//     p->state = UNUSED;
+//     return 0;
+//   }
+//   sp = p->kstack + KSTACKSIZE;
+//
+//   // Leave room for trap frame.
+//   sp -= sizeof *p->tf;
+//   p->tf = (struct trapframe*)sp;
+//
+//   // Set up new context to start executing at forkret,
+//   // which returns to trapret.
+//   sp -= 4;
+//   *(uint*)sp = (uint)trapret;
+//
+//   sp -= sizeof *p->context;
+//   p->context = (struct context*)sp;
+//   memset(p->context, 0, sizeof *p->context);
+//   p->context->eip = (uint)start_routine;
+//
+//   return p;
+// }
+
+int thread_create(thread_t *thread, void *(*start_routine)(void *), void *arg){
+  // int i, pid;
+  struct proc *np;
+  struct proc *curproc = myproc();
+  if((np = allocproc()) == 0){
+    return -1;
+  }
+   
+  uint sp, sz, ssz;
+  acquire(&ptable.lock);
+  np->th.main = curproc->th.main;
+  np->pgdir = np->th.main->pgdir;
+  np->pid = np->th.main->pid;
+  sz = np->th.main->sz;
+
+  /*
+   * set thread info
+   */
+  nextpid -= 1;
+  np->pid = np->th.main->pid;
+  np->th.tid = nexttid++;
+  curproc->th.next = np;
+  ssz = np->th.main->ssz;
+
+  *np->tf = *(np->th.main->tf);
+  np->tf->eip = (uint)start_routine;
+
+  /*
+   * allocate 2 pages for stack
+   */
+  sz = PGROUNDUP(sz);
+  if((sz = allocuvm(np->pgdir, sz, sz + 2*PGSIZE)) == 0){
+    np->state = UNUSED;
+    return -1;
+  }
+  clearpteu(np->pgdir, (char*)(sz - 2*PGSIZE));
+  sp = sz;
+  ssz += 1;
+
+  /*
+   * copy file descriptor of main
+   */
+  int i;
+  for(i = 0; i < NOFILE; i++)
+    if(np->th.main->ofile[i])
+      np->ofile[i] = filedup(np->th.main->ofile[i]);
+  np->cwd = idup(np->th.main->cwd);
+  //safestrcpy(np->name, np->th.main->name, sizeof(np->th.main->name));
+  release(&ptable.lock);
+
+  sp -= 8;
+  ((uint*)sp)[0] = 0xfffffff;
+  ((uint*)sp)[1] = (uint)arg;
+
+  np->tf->esp = sp;
+  *thread = np->th.tid;
+
+  acquire(&ptable.lock);
+  np->th.main->sz = sz; 
+  np->th.main->ssz = ssz;
+  np->sz = sz;
+  np->ssz = ssz;
+  np->state = RUNNABLE;
+  release(&ptable.lock);
+  //switchuvm(np->th.main);
+  //cprintf("end of thread create\n");
+  return 0; 
+}
+void thread_exit(void *retval){
+
+}
+int thread_join(thread_t thread, void **retval){
+  return 0;
+}
+
