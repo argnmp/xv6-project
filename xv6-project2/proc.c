@@ -92,7 +92,8 @@ found:
   // basic tid is set to -1, which means process itself
   p->th.tid = -1;
   p->th.main = p;
-  p->th.next = 0;
+  p->th.next = p;
+  p->th.prev = p;
 
   release(&ptable.lock);
 
@@ -300,6 +301,17 @@ wait(void)
        * wait for process, not thread
        */
       if(p->state == ZOMBIE && p->th.tid == -1){
+        /*
+         * if target process has threads, remove them
+         */
+        struct proc* cursor = p->th.next; 
+        struct proc* next_cursor;
+        while(p!=cursor){
+           next_cursor = cursor->th.next;
+           remove_th(cursor);
+           cursor = next_cursor;
+        } 
+         
         // Found one.
         pid = p->pid;
         kfree(p->kstack);
@@ -695,7 +707,13 @@ int thread_create(thread_t *thread, void *(*start_routine)(void *), void *arg){
   nextpid -= 1;
   np->pid = np->th.main->pid;
   np->th.tid = nexttid++;
+
+  // connect threads
+  np->th.next = curproc->th.next;
   curproc->th.next = np;
+  np->th.prev = curproc;
+  np->th.next->th.prev = np;
+  
   ssz = np->th.main->ssz;
 
   *np->tf = *(np->th.main->tf);
@@ -784,6 +802,9 @@ int thread_join(thread_t thread, void **retval){
       havetargetthread = 1;
       if(p->state == ZOMBIE){
         *retval = p->th.retval;
+        // update thread linkage
+        p->th.prev->th.next = p->th.next;
+        p->th.next->th.prev = p->th.prev;
         remove_th(p);
         release(&ptable.lock);
         return 0;
