@@ -784,18 +784,7 @@ int thread_join(thread_t thread, void **retval){
       havetargetthread = 1;
       if(p->state == ZOMBIE){
         *retval = p->th.retval;
-        // free all resources
-        kfree(p->kstack);
-        p->kstack = 0;
-        p->pid = 0;
-        p->parent = 0;
-        p->name[0] = 0;
-        p->killed = 0;
-        p->state = UNUSED;
-        save_thmem(p);
-        
-        // add thread's address space to process's thstack space for later use
-          
+        remove_th(p);
         release(&ptable.lock);
         return 0;
       }

@@ -32,3 +32,15 @@ uint load_thmem(struct proc* curthread){
   // cprintf("p: %d\n", p);
   return p;
 }
+void remove_th(struct proc* p){
+  // free all resources
+  kfree(p->kstack);
+  p->kstack = 0;
+  p->pid = 0;
+  p->parent = 0;
+  p->name[0] = 0;
+  p->killed = 0;
+  p->state = UNUSED;
+  // add thread's address space to process's thstack space for later use
+  save_thmem(p);
+}
