@@ -39,6 +39,7 @@ struct thread{
   int tid; // Thread ID, -1 means main thread(process itself)
   struct proc* main;
   struct proc* next; // connects threads belongs to a process
+  void* retval;
 };
 
 // Per-process state

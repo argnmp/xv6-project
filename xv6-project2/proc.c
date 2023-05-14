@@ -296,7 +296,10 @@ wait(void)
       if(p->parent != curproc)
         continue;
       havekids = 1;
-      if(p->state == ZOMBIE){
+      /*
+       * wait for process, not thread
+       */
+      if(p->state == ZOMBIE && p->th.tid == -1){
         // Found one.
         pid = p->pid;
         kfree(p->kstack);
@@ -554,6 +557,7 @@ procinfo(struct proc_info_s* pinfos){
   pinfos->pcount = 0;
 
   acquire(&ptable.lock);
+  procdump();
   for(p = ptable.proc; p < &ptable.proc[NPROC]; p++){
     if(p->state != UNUSED){
       pinfos->proc_arr[pinfos->pcount].pid = p->pid;
@@ -677,10 +681,12 @@ int thread_create(thread_t *thread, void *(*start_routine)(void *), void *arg){
   }
    
   uint sp, sz, ssz;
+
   acquire(&ptable.lock);
   np->th.main = curproc->th.main;
   np->pgdir = np->th.main->pgdir;
   np->pid = np->th.main->pid;
+  np->parent = np->th.main->parent;
   sz = np->th.main->sz;
 
   /*
@@ -737,9 +743,56 @@ int thread_create(thread_t *thread, void *(*start_routine)(void *), void *arg){
   return 0; 
 }
 void thread_exit(void *retval){
+  struct proc *curproc = myproc();
+  /*
+   * do not close file because multiple threads share files that belongs to the same process
+   */
+  acquire(&ptable.lock);
+  /*
+   * wakeup all threads that are sleeping on process that they are belongs to
+   * because thread can call thread_join for another thread
+   */
+  wakeup1(curproc->th.main);
 
+  curproc->state = ZOMBIE;
+  curproc->th.retval = retval;
+  sched();
+  panic("thread zombie exit");
 }
 int thread_join(thread_t thread, void **retval){
-  return 0;
+  struct proc *p;
+  int havethreads, havetargetthread;
+  struct proc *curproc = myproc();
+  acquire(&ptable.lock);
+  for(;;){
+    havethreads = 0;
+    havetargetthread = 0;
+    for(p = ptable.proc; p < &ptable.proc[NPROC]; p++){
+      if(p->th.main != curproc)
+        continue;
+      havethreads = 1;
+      if(p->th.tid != thread)
+        continue;
+      havetargetthread = 1;
+      if(p->state == ZOMBIE){
+        *retval = p->th.retval;
+        // Found one.
+        kfree(p->kstack);
+        p->kstack = 0;
+        p->pid = 0;
+        p->parent = 0;
+        p->name[0] = 0;
+        p->killed = 0;
+        p->state = UNUSED;
+        release(&ptable.lock);
+        return 0;
+      }
+    }
+    if(!havethreads || !havetargetthread || curproc->killed){
+      release(&ptable.lock);
+      return -1;
+    }
+    sleep(curproc, &ptable.lock);
+  }
 }
 

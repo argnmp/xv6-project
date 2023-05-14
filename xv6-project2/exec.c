@@ -60,13 +60,19 @@ exec(char *path, char **argv)
   end_op();
   ip = 0;
 
-  // Allocate two pages at the next page boundary.
-  // Make the first inaccessible.  Use the second as the user stack.
+  /*
+   * allocate three pages
+   * upper two pages are for stack
+   * lower one page is used for saving deallocated thread memory space
+   */
   sz = PGROUNDUP(sz);
-  if((sz = allocuvm(pgdir, sz, sz + 2*PGSIZE)) == 0)
+  if((sz = allocuvm(pgdir, sz, sz + 3*PGSIZE)) == 0)
     goto bad;
   clearpteu(pgdir, (char*)(sz - 2*PGSIZE));
   sp = sz;
+  // set thread memory stack
+  curproc->thstack = (char*)(sz - 3*PGSIZE);
+  curproc->thstack_sp = (char*)(sz - 3*PGSIZE);
 
   // Push argument strings, prepare rest of stack in ustack.
   for(argc = 0; argv[argc]; argc++) {
@@ -100,6 +106,7 @@ exec(char *path, char **argv)
   curproc->ssz = 1*PGSIZE;
   curproc->tf->eip = elf.entry;  // main
   curproc->tf->esp = sp;
+  
   switchuvm(curproc);
   freevm(oldpgdir);
   return 0;
@@ -180,9 +187,10 @@ exec2(char *path, char **argv, int stacksize)
    * allocate 'stacksize' number of pages
    * PGSIZE + stacksize * PGSIZE
    * one for guard page and others for stack
+   * and one page is used for saving deallocated thread memory space
    */
   sz = PGROUNDUP(sz);
-  if((sz = allocuvm(pgdir, sz, sz + PGSIZE + stacksize * PGSIZE)) == 0)
+  if((sz = allocuvm(pgdir, sz, sz + 2*PGSIZE + stacksize * PGSIZE)) == 0)
     goto bad;
 
   /*
@@ -190,6 +198,10 @@ exec2(char *path, char **argv, int stacksize)
    */
   clearpteu(pgdir, (char*)(sz - (PGSIZE + stacksize * PGSIZE)));
   sp = sz;
+
+  // set thread memory stack
+  curproc->thstack = (char*)(sz - (2*PGSIZE + stacksize * PGSIZE));
+  curproc->thstack_sp = (char*)(sz - (2*PGSIZE + stacksize * PGSIZE));
 
   // Push argument strings, prepare rest of stack in ustack.
   for(argc = 0; argv[argc]; argc++) {
