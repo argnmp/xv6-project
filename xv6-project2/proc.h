@@ -62,6 +62,7 @@ struct proc {
   
   char* thstack;               // Bottom of empty thread memory space stack 
   char* thstack_sp;            // current stack pointer of thstack
+  char* thstack_fp;            // Top of empty thread memory space stack
   struct thread th;
 };
 

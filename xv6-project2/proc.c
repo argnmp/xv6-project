@@ -704,12 +704,19 @@ int thread_create(thread_t *thread, void *(*start_routine)(void *), void *arg){
   /*
    * allocate 2 pages for stack
    */
-  sz = PGROUNDUP(sz);
-  if((sz = allocuvm(np->pgdir, sz, sz + 2*PGSIZE)) == 0){
-    np->state = UNUSED;
-    return -1;
+  uint p = load_thmem(np);
+  if(p==0){
+    cprintf("no free thmem exist\n");
+    sz = PGROUNDUP(sz);
+    if((sz = allocuvm(np->pgdir, sz, sz + 2*PGSIZE)) == 0){
+      np->state = UNUSED;
+      return -1;
+    }
+    clearpteu(np->pgdir, (char*)(sz - 2*PGSIZE));
   }
-  clearpteu(np->pgdir, (char*)(sz - 2*PGSIZE));
+  else {
+    sz = p;
+  }
   sp = sz;
   ssz += 1;
 
@@ -721,7 +728,8 @@ int thread_create(thread_t *thread, void *(*start_routine)(void *), void *arg){
     if(np->th.main->ofile[i])
       np->ofile[i] = filedup(np->th.main->ofile[i]);
   np->cwd = idup(np->th.main->cwd);
-  //safestrcpy(np->name, np->th.main->name, sizeof(np->th.main->name));
+  safestrcpy(np->name, np->th.main->name, sizeof(np->th.main->name));
+
   release(&ptable.lock);
 
   sp -= 8;
@@ -776,7 +784,7 @@ int thread_join(thread_t thread, void **retval){
       havetargetthread = 1;
       if(p->state == ZOMBIE){
         *retval = p->th.retval;
-        // Found one.
+        // free all resources
         kfree(p->kstack);
         p->kstack = 0;
         p->pid = 0;
@@ -784,6 +792,10 @@ int thread_join(thread_t thread, void **retval){
         p->name[0] = 0;
         p->killed = 0;
         p->state = UNUSED;
+        save_thmem(p);
+        
+        // add thread's address space to process's thstack space for later use
+          
         release(&ptable.lock);
         return 0;
       }

@@ -34,5 +34,6 @@ int main(int argc, char * argv[]){
   for(int i = 0; i<WORKER; i++){
     printf(1, "worker %d, value: %d\n", i, calc[i]);
   }
+  for(;;);
   exit();
 }

@@ -71,8 +71,11 @@ exec(char *path, char **argv)
   clearpteu(pgdir, (char*)(sz - 2*PGSIZE));
   sp = sz;
   // set thread memory stack
+  // thstack memory must not be accessible to user
+  clearpteu(pgdir, (char*)(sz - 3*PGSIZE));
   curproc->thstack = (char*)(sz - 3*PGSIZE);
-  curproc->thstack_sp = (char*)(sz - 3*PGSIZE);
+  curproc->thstack_sp = (char*)(sz - 2*PGSIZE);
+  curproc->thstack_fp = (char*)(sz - 2*PGSIZE);
 
   // Push argument strings, prepare rest of stack in ustack.
   for(argc = 0; argv[argc]; argc++) {
@@ -200,8 +203,10 @@ exec2(char *path, char **argv, int stacksize)
   sp = sz;
 
   // set thread memory stack
+  clearpteu(pgdir, (char*)(sz - (2*PGSIZE + stacksize * PGSIZE)));
   curproc->thstack = (char*)(sz - (2*PGSIZE + stacksize * PGSIZE));
-  curproc->thstack_sp = (char*)(sz - (2*PGSIZE + stacksize * PGSIZE));
+  curproc->thstack_sp = (char*)(sz - (PGSIZE + stacksize * PGSIZE));
+  curproc->thstack_fp = (char*)(sz - (PGSIZE + stacksize * PGSIZE));
 
   // Push argument strings, prepare rest of stack in ustack.
   for(argc = 0; argv[argc]; argc++) {
