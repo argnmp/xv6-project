@@ -47,7 +47,7 @@ int main(int argc, char * argv[]){
       printf(1, "join thread %d | is succeeded? %d | retval: %d \n",tids[i], res, *(int*)retval);
     }
   }
-  //for(;;);
+  for(;;);
   exit();
   // for(int i = 0; i<WORKER; i++){
   //   int res = thread_join(tids[i], (void*)&retval);

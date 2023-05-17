@@ -14,6 +14,9 @@ struct {
 
 static struct proc *initproc;
 
+// global thread id
+int nexttid = 1;
+
 int nextpid = 1;
 extern void forkret(void);
 extern void trapret(void);
@@ -90,7 +93,7 @@ found:
   p->pid = nextpid++;
   p->sz_limit = 0;
   // basic tid is set to -1, which means process itself
-  p->th.tid = -1;
+  p->th.tid = nexttid++;
   p->th.main = p;
   p->th.next = p;
   p->th.prev = p;
@@ -300,7 +303,7 @@ wait(void)
       /*
        * wait for process, not thread
        */
-      if(p->state == ZOMBIE && p->th.tid == -1){
+      if(p->state == ZOMBIE && p->th.main == p){
         /*
          * if target process has threads, remove them
          */
@@ -569,7 +572,7 @@ procinfo(struct proc_info_s* pinfos){
   pinfos->pcount = 0;
 
   acquire(&ptable.lock);
-  procdump();
+  //procdump();
   for(p = ptable.proc; p < &ptable.proc[NPROC]; p++){
     if(p->state != UNUSED){
       pinfos->proc_arr[pinfos->pcount].pid = p->pid;
@@ -621,68 +624,6 @@ procdump(void)
   }
 }
 
-/*
- * thread implementation
- */
-
-// global thread id
-int nexttid = 1;
-
-/*
- * allocate thread that fits to ptable
- */
-// static struct proc*
-// allocthread(struct proc* prev_thread, void *(*start_routine)(void *))
-// {
-//   struct proc *p;
-//   char *sp;
-//
-//   acquire(&ptable.lock);
-//
-//   for(p = ptable.proc; p < &ptable.proc[NPROC]; p++)
-//     if(p->state == UNUSED)
-//       goto found;
-//
-//   release(&ptable.lock);
-//   return 0;
-//
-// found:
-//   p->state = EMBRYO;
-//   // share pid among threads
-//   p->pid = prev_thread->pid;
-//   p->sz_limit = 0;
-//   // basic tid is set to -1, which means process itself
-//   p->th.tid = nexttid++;
-//   p->th.next = 0;
-//   // link thread
-//   p->th.main = prev_thread->th.main;
-//   prev_thread->th.next = p;
-//
-//   release(&ptable.lock);
-//
-//   // allocate independent kernel stack for context switching
-//   if((p->kstack = kalloc()) == 0){
-//     p->state = UNUSED;
-//     return 0;
-//   }
-//   sp = p->kstack + KSTACKSIZE;
-//
-//   // Leave room for trap frame.
-//   sp -= sizeof *p->tf;
-//   p->tf = (struct trapframe*)sp;
-//
-//   // Set up new context to start executing at forkret,
-//   // which returns to trapret.
-//   sp -= 4;
-//   *(uint*)sp = (uint)trapret;
-//
-//   sp -= sizeof *p->context;
-//   p->context = (struct context*)sp;
-//   memset(p->context, 0, sizeof *p->context);
-//   p->context->eip = (uint)start_routine;
-//
-//   return p;
-// }
 
 int thread_create(thread_t *thread, void *(*start_routine)(void *), void *arg){
   // int i, pid;
