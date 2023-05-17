@@ -61,15 +61,38 @@ int run(struct args_s* args){
 
     int stacksize = atoi(args->arg[2]);
     if(pid==0){
-      int res = exec2(execargv[0], execargv, stacksize); 
-      if(res < 0){
+      int pid2 = fork();
+      if(pid2==0){
+        int res = exec2(execargv[0], execargv, stacksize); 
+        if(res < 0){
+          printf(1, "execute failed\n");
+          exit();
+        }
+      }
+      else if(pid2 < 0){
         printf(1, "execute failed\n");
+      }
+      else{
         exit();
       }
     }
     else if(pid < 0){
       printf(1, "execute failed\n");
     }
+    else {
+      wait();
+    }
+
+    // if(pid==0){
+    //   int res = exec2(execargv[0], execargv, stacksize); 
+    //   if(res < 0){
+    //     printf(1, "execute failed\n");
+    //     exit();
+    //   }
+    // }
+    // else if(pid < 0){
+    //   printf(1, "execute failed\n");
+    // }
   }
   else if(strcmp(args->arg[0], "memlim")==0){
     // check path is empty

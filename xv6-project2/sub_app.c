@@ -22,7 +22,7 @@ void* calculate(void* args){
   return 0;
 }
 void* temp(void* args){
-  printf(1, "thread: arg: %d", (int)args);
+  //printf(1, "thread: arg: %d", (int)args);
   int* ret = (int*)40;
   if((int)args % 2 == 0){
     thread_exit(&ret); 
@@ -40,20 +40,21 @@ int main(int argc, char * argv[]){
   for(int i = 0; i<WORKER; i++){
     int res = thread_create(&tid, temp, (int*)i);
     tids[i] = tid;
-    printf(1, "create thread %d | is succeeded? %d\n",tid, res);
+    printf(1, "create thread %d | is succeeded? %d\n",tids[i], res);
 
     if(i%2==0){
       res = thread_join(tids[i], (void*)&retval);
-      printf(1, "join thread %d | is succeeded? %d | retval: %d \n",i, res, *(int*)retval);
+      printf(1, "join thread %d | is succeeded? %d | retval: %d \n",tids[i], res, *(int*)retval);
     }
   }
+  //for(;;);
   exit();
-  for(int i = 0; i<WORKER; i++){
-    int res = thread_join(tids[i], (void*)&retval);
-    printf(1, "join thread %d | is succeeded? %d | retval: %d \n",i, res, *(int*)retval);
-  }
-  for(int i = 0; i<WORKER; i++){
-    printf(1, "worker %d, value: %d\n", i, calc[i]);
-  }
+  // for(int i = 0; i<WORKER; i++){
+  //   int res = thread_join(tids[i], (void*)&retval);
+  //   printf(1, "join thread %d | is succeeded? %d | retval: %d \n",i, res, *(int*)retval);
+  // }
+  // for(int i = 0; i<WORKER; i++){
+  //   printf(1, "worker %d, value: %d\n", i, calc[i]);
+  // }
   //for(;;);
 }
