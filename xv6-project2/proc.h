@@ -59,6 +59,11 @@ struct proc {
   struct inode *cwd;           // Current directory
   char name[16];               // Process name (debugging)
   uint ssz;                    // stack size
+
+  /*
+   * only valid values for main thread
+   */
+  uint sz_base;                // initial sz value 
   uint sz_limit;               // determines upper limit size of memory allocation to process, 0 means infinite
   
   char* thstack;               // Bottom of empty thread memory space stack 

@@ -9,9 +9,11 @@ typedef uint pde_t;
 struct proc_info_s{
   struct proc_i {
     int pid;
+    int tid;
     uint ssz;
     uint sz;
     uint sz_limit;
+    uint sz_base;
   } proc_arr[64];
   int pcount;
 };

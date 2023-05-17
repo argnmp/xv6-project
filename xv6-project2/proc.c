@@ -576,9 +576,11 @@ procinfo(struct proc_info_s* pinfos){
   for(p = ptable.proc; p < &ptable.proc[NPROC]; p++){
     if(p->state != UNUSED){
       pinfos->proc_arr[pinfos->pcount].pid = p->pid;
+      pinfos->proc_arr[pinfos->pcount].tid = p->th.tid;
       pinfos->proc_arr[pinfos->pcount].ssz = p->ssz;
       pinfos->proc_arr[pinfos->pcount].sz = p->sz;
       pinfos->proc_arr[pinfos->pcount].sz_limit = p->sz_limit;
+      pinfos->proc_arr[pinfos->pcount].sz_base = p->sz_base;
       pinfos->pcount += 1;
     }
   }
@@ -647,7 +649,6 @@ int thread_create(thread_t *thread, void *(*start_routine)(void *), void *arg){
    */
   nextpid -= 1;
   np->pid = np->th.main->pid;
-  np->th.tid = nexttid++;
 
   // connect threads
   np->th.next = curproc->th.next;
@@ -677,7 +678,7 @@ int thread_create(thread_t *thread, void *(*start_routine)(void *), void *arg){
     sz = p;
   }
   sp = sz;
-  ssz += 1;
+  ssz += 1*PGSIZE;
 
   /*
    * copy file descriptor of main
@@ -702,7 +703,9 @@ int thread_create(thread_t *thread, void *(*start_routine)(void *), void *arg){
   np->th.main->sz = sz; 
   np->th.main->ssz = ssz;
   np->sz = sz;
-  np->ssz = ssz;
+  np->ssz = 1*PGSIZE;
+  np->sz_base = sz;
+  np->sz_limit = sz;
   np->state = RUNNABLE;
   release(&ptable.lock);
   //switchuvm(np->th.main);
