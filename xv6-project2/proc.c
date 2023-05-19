@@ -23,6 +23,7 @@ extern void trapret(void);
 
 static void wakeup1(void *chan);
 
+
 void
 pinit(void)
 {
@@ -204,7 +205,44 @@ fork(void)
   if((np = allocproc()) == 0){
     return -1;
   }
+  acquire(&ptable.lock);
+  /*
+   * if the thread that called fork is not a main thread, change to main thread
+   * and set curthread
+   */
+  curproc = curproc->th.main;
+  struct proc* curthread = myproc();
+  /*
+   * first update thmem stackspace and then update
+   */
+  np->thstack = curproc->thstack; 
+  np->thstack_sp = curproc->thstack_sp;
+  np->thstack_fp = curproc->thstack_fp;
 
+  /*
+   * remove all thread address spaces except for the thread that called fork
+   */
+  struct proc* cursor = curthread->th.next; 
+  struct proc* next_cursor;
+  // just collects memory of RUNNABLE thread, because there is possibility of duplicate thmem record in thstack if collect thread in other states.  
+  while(curthread!=cursor && cursor->state == RUNNABLE){
+    // now, just save only thread address space, later implement
+    if(cursor == curproc){
+      cursor = cursor->th.next;
+      continue;
+    }
+    next_cursor = cursor->th.next;
+    //because current process is not new process, so save_thmem is impossible!!!
+    save_thmem(cursor, np);
+    cursor = next_cursor;
+  } 
+
+  /*
+   * curproc->thstack_sp, remains same, 
+   * but np->thstack_sp differs by containing saved thread memory spaces
+   */
+
+  // have to copy entire process address space becasue of the heap space
   // Copy process state from proc.
   if((np->pgdir = copyuvm(curproc->pgdir, curproc->sz)) == 0){
     kfree(np->kstack);
@@ -213,8 +251,18 @@ fork(void)
     return -1;
   }
   np->sz = curproc->sz;
-  np->parent = curproc;
-  *np->tf = *curproc->tf;
+  np->parent = curthread;
+  *np->tf = *curthread->tf;
+
+  /*
+   * copy process info
+   */
+  np->ssz = curproc->ssz;
+  np->sz_base = curproc->sz_base;
+  np->sz_limit = curproc->sz_limit;
+   
+  release(&ptable.lock);
+  
 
   // Clear %eax so that fork returns 0 in the child.
   np->tf->eax = 0;
@@ -637,7 +685,9 @@ int thread_create(thread_t *thread, void *(*start_routine)(void *), void *arg){
    
   uint sp, sz, ssz;
 
+
   acquire(&ptable.lock);
+
   np->th.main = curproc->th.main;
   np->pgdir = np->th.main->pgdir;
   np->pid = np->th.main->pid;
@@ -662,11 +712,11 @@ int thread_create(thread_t *thread, void *(*start_routine)(void *), void *arg){
   np->tf->eip = (uint)start_routine;
 
   /*
-   * allocate 2 pages for stack
+   * allocate 2 pages for thread stack
    */
   uint p = load_thmem(np);
   if(p==0){
-    cprintf("no free thmem exist\n");
+    // cprintf("no free thmem exist\n");
     sz = PGROUNDUP(sz);
     if((sz = allocuvm(np->pgdir, sz, sz + 2*PGSIZE)) == 0){
       np->state = UNUSED;
@@ -675,6 +725,7 @@ int thread_create(thread_t *thread, void *(*start_routine)(void *), void *arg){
     clearpteu(np->pgdir, (char*)(sz - 2*PGSIZE));
   }
   else {
+    cprintf("pid:%d, tid:%d, reuse!\n", curproc->pid, curproc->th.tid);
     sz = p;
   }
   sp = sz;
@@ -688,6 +739,12 @@ int thread_create(thread_t *thread, void *(*start_routine)(void *), void *arg){
     if(np->th.main->ofile[i])
       np->ofile[i] = filedup(np->th.main->ofile[i]);
   np->cwd = idup(np->th.main->cwd);
+  /* int i;
+  for(i = 0; i < NOFILE; i++)
+    if(np->th.main->ofile[i])
+      np->ofile[i] = np->th.main->ofile[i];
+  np->cwd = np->th.main->cwd; */
+
   safestrcpy(np->name, np->th.main->name, sizeof(np->th.main->name));
 
   release(&ptable.lock);
@@ -695,11 +752,14 @@ int thread_create(thread_t *thread, void *(*start_routine)(void *), void *arg){
   sp -= 8;
   ((uint*)sp)[0] = 0xfffffff;
   ((uint*)sp)[1] = (uint)arg;
+  
+  
 
   np->tf->esp = sp;
   *thread = np->th.tid;
 
   acquire(&ptable.lock);
+
   np->th.main->sz = sz; 
   np->th.main->ssz = ssz;
   np->sz = sz;
@@ -707,9 +767,8 @@ int thread_create(thread_t *thread, void *(*start_routine)(void *), void *arg){
   np->sz_base = sz;
   np->sz_limit = sz;
   np->state = RUNNABLE;
+
   release(&ptable.lock);
-  //switchuvm(np->th.main);
-  //cprintf("end of thread create\n");
   return 0; 
 }
 void thread_exit(void *retval){

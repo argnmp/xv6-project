@@ -130,7 +130,7 @@ void            thread_exit(void*);
 int             thread_join(thread_t, void**);
 
 // thread.c
-int save_thmem(struct proc*);
+int save_thmem(struct proc*, struct proc*);
 uint load_thmem(struct proc*);
 void remove_th(struct proc*);
 

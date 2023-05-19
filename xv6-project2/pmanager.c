@@ -28,6 +28,38 @@ int listcmd(){
   return 0;
 }
 int run(struct args_s* args){
+  /*
+   * custom test
+   */
+  if(strcmp(args->arg[0], "test")==0){
+    if(strcmp(args->arg[1], "")==0 || strcmp(args->arg[2], "")==0){
+      return 0; 
+    }
+    for(int i = 0; i<atoi(args->arg[2]); i++){
+      printf(1, "test %d start\n", i);
+      int pid;
+      pid = fork();
+      char* execargv[10]; 
+      char path[100] = {0,};
+      strcpy(path, args->arg[1]); 
+      execargv[0] = path;
+
+      if(pid==0){
+        exec(execargv[0], execargv); 
+      }
+      else if(pid < 0){
+        printf(1, "execute failed\n");
+      }
+      else {
+        wait();
+      }
+      printf(1, "test %d end\n", i);
+    }
+  }
+  /*
+   * custom test
+   */
+
   if(strcmp(args->arg[0], "list")==0){
     int res = listcmd(); 
     if(res < 0){
