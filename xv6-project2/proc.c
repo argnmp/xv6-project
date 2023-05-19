@@ -253,6 +253,7 @@ fork(void)
   np->sz = curproc->sz;
   np->parent = curthread;
   *np->tf = *curthread->tf;
+  //cprintf("fork | pid: %d, tid: %d, curthread esp: %d,curproc sz: %d\n",np->pid, np->th.tid, curthread->tf->esp, curproc->sz);
 
   /*
    * copy process info
@@ -261,7 +262,6 @@ fork(void)
   np->sz_base = curproc->sz_base;
   np->sz_limit = curproc->sz_limit;
    
-  release(&ptable.lock);
   
 
   // Clear %eax so that fork returns 0 in the child.
@@ -275,6 +275,9 @@ fork(void)
   safestrcpy(np->name, curproc->name, sizeof(curproc->name));
 
   pid = np->pid;
+
+  /*change!*/
+  release(&ptable.lock);
 
   acquire(&ptable.lock);
 
@@ -598,7 +601,7 @@ setmemorylimit(int pid, int limit){
         // set sz_limit to limit
         p->sz_limit = limit;
       }
-      cprintf("sml -> pid: %d | sz: %d | sz_limit:%d \n",pid, p->sz, p->sz_limit);
+      //cprintf("sml -> pid: %d | sz: %d | sz_limit:%d \n",pid, p->sz, p->sz_limit);
 
       release(&ptable.lock);
       return 0;
@@ -620,7 +623,7 @@ procinfo(struct proc_info_s* pinfos){
   pinfos->pcount = 0;
 
   acquire(&ptable.lock);
-  //procdump();
+  procdump();
   for(p = ptable.proc; p < &ptable.proc[NPROC]; p++){
     if(p->state != UNUSED){
       pinfos->proc_arr[pinfos->pcount].pid = p->pid;
@@ -664,7 +667,8 @@ procdump(void)
       state = states[p->state];
     else
       state = "???";
-    cprintf("%d %s %s", p->pid, state, p->name);
+    // cprintf("%d %s %s", p->pid, state, p->name);
+    cprintf("%d %s %s, parent: %d", p->pid, state, p->name, p->parent->pid);
     if(p->state == SLEEPING){
       getcallerpcs((uint*)p->context->ebp+2, pc);
       for(i=0; i<10 && pc[i] != 0; i++)
@@ -693,6 +697,7 @@ int thread_create(thread_t *thread, void *(*start_routine)(void *), void *arg){
   np->pid = np->th.main->pid;
   np->parent = np->th.main->parent;
   sz = np->th.main->sz;
+  //cprintf("pid: %d, tid: %d, thmain tid: %d, before sz: %d\n", np->pid, np->th.tid, np->th.main->th.tid, sz);
 
   /*
    * set thread info
@@ -714,8 +719,11 @@ int thread_create(thread_t *thread, void *(*start_routine)(void *), void *arg){
   /*
    * allocate 2 pages for thread stack
    */
+  int reuse_flag = 0;
   uint p = load_thmem(np);
   if(p==0){
+    reuse_flag = 0;
+    ssz += 1*PGSIZE;
     // cprintf("no free thmem exist\n");
     sz = PGROUNDUP(sz);
     if((sz = allocuvm(np->pgdir, sz, sz + 2*PGSIZE)) == 0){
@@ -725,11 +733,11 @@ int thread_create(thread_t *thread, void *(*start_routine)(void *), void *arg){
     clearpteu(np->pgdir, (char*)(sz - 2*PGSIZE));
   }
   else {
-    cprintf("pid:%d, tid:%d, reuse!\n", curproc->pid, curproc->th.tid);
+    reuse_flag = 1;
+    //cprintf("pid:%d, tid:%d, reuse!\n", curproc->pid, curproc->th.tid);
     sz = p;
   }
   sp = sz;
-  ssz += 1*PGSIZE;
 
   /*
    * copy file descriptor of main
@@ -739,11 +747,11 @@ int thread_create(thread_t *thread, void *(*start_routine)(void *), void *arg){
     if(np->th.main->ofile[i])
       np->ofile[i] = filedup(np->th.main->ofile[i]);
   np->cwd = idup(np->th.main->cwd);
-  /* int i;
-  for(i = 0; i < NOFILE; i++)
-    if(np->th.main->ofile[i])
-      np->ofile[i] = np->th.main->ofile[i];
-  np->cwd = np->th.main->cwd; */
+  // int i;
+  // for(i = 0; i < NOFILE; i++)
+  //   if(np->th.main->ofile[i])
+  //     np->ofile[i] = np->th.main->ofile[i];
+  // np->cwd = np->th.main->cwd;
 
   safestrcpy(np->name, np->th.main->name, sizeof(np->th.main->name));
 
@@ -756,12 +764,15 @@ int thread_create(thread_t *thread, void *(*start_routine)(void *), void *arg){
   
 
   np->tf->esp = sp;
+  //cprintf("pid: %d, tid: %d, in thread_create, sp: %d, sz: %d\n",np->pid, np->th.tid, sp,sz);
   *thread = np->th.tid;
 
   acquire(&ptable.lock);
 
-  np->th.main->sz = sz; 
-  np->th.main->ssz = ssz;
+  if(reuse_flag==0){
+    np->th.main->sz = sz; 
+    np->th.main->ssz = ssz;
+  }
   np->sz = sz;
   np->ssz = 1*PGSIZE;
   np->sz_base = sz;
@@ -773,6 +784,23 @@ int thread_create(thread_t *thread, void *(*start_routine)(void *), void *arg){
 }
 void thread_exit(void *retval){
   struct proc *curproc = myproc();
+
+  if(curproc == initproc)
+    panic("init exiting");
+
+  // int fd;
+  // for(fd = 0; fd < NOFILE; fd++){
+  //   if(curproc->ofile[fd]){
+  //     fileclose(curproc->ofile[fd]);
+  //     curproc->ofile[fd] = 0;
+  //   }
+  // }
+  //
+  // begin_op();
+  // iput(curproc->cwd);
+  // end_op();
+  // curproc->cwd = 0;
+
   /*
    * do not close file because multiple threads share files that belongs to the same process
    */

@@ -1,22 +1,40 @@
 #include "types.h"
 #include "stat.h"
 #include "user.h"
-/* void recall(int n){
-  char a[1<<10];
-  memset(a, -1, sizeof(a));
-  printf(1, "%d / %d\n", a[0], n);
-  recall(n+1);
-} */
-#define WORKER 10
-void* temp(void* args){
+#define dbg(fmt, args...) printf(1, "[%d: %s] pid %d | " fmt "\n",__LINE__, __FUNCTION__, getpid(), ##args)
+#define WORKER1 5
+#define WORKER2 5
+int cal2[WORKER2] = {0};
+void* temp2(void* args){
+  int* ret = 0;
+  for(int i = 0; i<10; i++){
+    cal2[(int)args] += (int)args;
+  }
+  thread_exit(&ret);
+  return 0;
+}
+void* temp1(void* args){
   //printf(1, "thread: arg: %d", (int)args);
-  int* ret = (int*)40;
+  int* ret;
   int pid = fork();
   if(pid==0){
+    int retval = 0;
+    thread_t tids[WORKER2] = {0,};
+    for(int i = 0; i<WORKER2; i++){
+      int res = thread_create(&tids[i], temp2, (int*)i);
+      if(res < 0)
+        dbg("thc failed");
+    }
+    int v = 0; 
+    for(int i = 0; i<WORKER2; i++){
+      thread_join(tids[i], (void*)&retval);
+      v += cal2[i];  
+    }
+    dbg("result: %d", v);
     exit();
   }
   else if(pid < 0){
-    printf(1, "fork failed\n");
+      dbg("fork failed");
   }
   else {
     wait();
@@ -26,15 +44,13 @@ void* temp(void* args){
 }
 int main(int argc, char * argv[]){
   int retval = 0;
-  thread_t tid;
-  thread_t tids[WORKER] = {0,};
-  for(int i = 0; i<WORKER; i++){
-    int res = thread_create(&tid, temp, (int*)i);
+  thread_t tids[WORKER1] = {0,};
+  for(int i = 0; i<WORKER1; i++){
+    int res = thread_create(&tids[i], temp1, (int*)i);
     if(res < 0)
-      printf(1, "thread failed\n");
-    tids[i] = tid;
+      dbg("thc failed");
   }
-  for(int i = 0; i<WORKER; i++){
+  for(int i = 0; i<WORKER1; i++){
     thread_join(tids[i], (void*)&retval);
   }
   exit();

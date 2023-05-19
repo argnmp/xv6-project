@@ -22,6 +22,7 @@ int sys_thread_create(void){
   void* (*start_routine)(void*);
   void* arg;
   if(argptr(0, (char**)&thread, sizeof(thread_t)) < 0 || argptr(1, (char**)&start_routine, sizeof(void*)) < 0 || argptr(2, (char**)&arg, sizeof(void*))){
+    panic("thc argument failed!!");
     return -1;
   }
   // cprintf("%d, %d, %d \n", *thread, start_routine, *(int*)arg);  
@@ -34,6 +35,7 @@ int sys_thread_create(void){
 void sys_thread_exit(void){
   void* retval;
   if(argptr(0, (char**)&retval, sizeof(void*)) < 0){
+    panic("the argument failed!!");
     return;
   }
   thread_exit(retval);
@@ -42,7 +44,9 @@ void sys_thread_exit(void){
 int sys_thread_join(void){
   thread_t thread;
   void* retval_p;
-  if(argptr(0, (char**)&thread, sizeof(thread_t)) < 0 || argptr(1, (char**)&retval_p, sizeof(void*)) < 0){
+  if(argint(0, &thread) < 0 || argptr(1, (char**)&retval_p, sizeof(void*)) < 0){
+    //procdump();
+    panic("thj argument failed!!");
     return -1;
   }
   return thread_join(thread, retval_p);

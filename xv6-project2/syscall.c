@@ -19,8 +19,11 @@ fetchint(uint addr, int *ip)
 {
   struct proc *curproc = myproc();
 
-  if(addr >= curproc->sz || addr+4 > curproc->sz)
+  if(addr >= curproc->sz || addr+4 > curproc->sz){
+    cprintf("pid:%d, tid: %d, addr: %d, curproc->sz: %d\n",curproc->pid, curproc->th.tid, addr, curproc->sz);
+
     return -1;
+  }
   *ip = *(int*)(addr);
   return 0;
 }
