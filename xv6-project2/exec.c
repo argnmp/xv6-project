@@ -20,13 +20,17 @@ exec(char *path, char **argv)
   struct proc *curproc = myproc();
   struct proc *cursor;
 
+/*
+ * method1
+ */
+
   /*
    * remove all threads except for current thread
    * This task requires ptable.lock
    * delayed exit is used for this sequence
    */
-  // ptable_lk_acquire();
-  
+  ptable_lk_acquire();
+
   cursor = curproc->th.next; 
   while(cursor!=curproc){
     cursor->delayed_exit = 1;
@@ -36,11 +40,13 @@ exec(char *path, char **argv)
     cursor = cursor->th.next;
   } 
 
-  // ptable_lk_release();
+  ptable_lk_release();
+  //cprintf("exec: end of settings\n");
   /*
    * check whether the thread has exited and remove thread
    * delayed exit to make ptable unused
    */
+  // if(curproc!=curproc->th.next) for(;;);
 
   // cprintf("curproc -> pid: %d, tid: %d, parent: %d\n", cursor->pid, cursor->th.tid, cursor->parent->pid);
   ptable_lk_acquire();
@@ -49,24 +55,35 @@ exec(char *path, char **argv)
     break_flag = 1;
     cursor = curproc->th.next; 
     while(cursor != curproc){
-      if(cursor->state == DELAYED){
-        // cprintf("pid: %d, tid: %d delayed!, parent: %d\n", cursor->pid, cursor->th.tid, cursor->parent->pid);
+      // cprintf("await cursor pid: %d, tid: %d\n", cursor->pid, cursor->th.tid);
+
+      if(cursor->state==UNUSED){
+        cursor = cursor->th.next;
+        continue;
+      }
+      break_flag = 0;
+
+      if(cursor->state != RUNNING){
+
+        // cprintf("pid: %d, tid: %d, parent: %d, state: %d, killed: %d\n", cursor->pid, cursor->th.tid, cursor->parent->pid, cursor->state, cursor->killed);
         kfree(cursor->kstack);
         cursor->kstack = 0;
         cursor->state = UNUSED;
-        cursor->th.prev->th.next = cursor->th.next;
-        cursor->th.next->th.prev = cursor->th.prev;
-        break_flag = 1;
-      }
-      else {
-        break_flag = 0;
+        cursor->pid = 0;
+        cursor->parent = 0;
+        cursor->name[0] = 0;
+        cursor->killed = 0;
+        cursor->delayed_exit = 0;
       }
       cursor = cursor->th.next; 
     }
+    //cprintf("end of while\n");
+
     if(break_flag==1) {
+      //cprintf("break!\n");
       break;
     }
-    sleep_wrapper(curproc);
+      // sleep_wrapper(curproc);
   }
   curproc->th.main = curproc;
   curproc->th.next= curproc;
@@ -74,6 +91,27 @@ exec(char *path, char **argv)
   curproc->sz_limit = 0;
   ptable_lk_release();
 
+  /*
+   * method2
+   */
+
+  // ptable_lk_acquire();
+  //
+  // cursor = curproc->th.next; 
+  // while(cursor!=curproc){
+  //   kfree(cursor->kstack);
+  //   cursor->kstack = 0;
+  //   cursor->state = UNUSED;
+  //
+  //
+  //   cursor = cursor->th.next;
+  // } 
+  // curproc->th.main = curproc;
+  // curproc->th.next= curproc;
+  // curproc->th.prev = curproc;
+  // curproc->sz_limit = 0;
+  //
+  // ptable_lk_release();
 
   begin_op();
 
@@ -202,14 +240,17 @@ exec2(char *path, char **argv, int stacksize)
   pde_t *pgdir, *oldpgdir;
   struct proc *curproc = myproc();
   struct proc *cursor;
+/*
+ * method1
+ */
 
   /*
    * remove all threads except for current thread
    * This task requires ptable.lock
    * delayed exit is used for this sequence
    */
-  // ptable_lk_acquire();
-  
+  ptable_lk_acquire();
+
   cursor = curproc->th.next; 
   while(cursor!=curproc){
     cursor->delayed_exit = 1;
@@ -219,40 +260,79 @@ exec2(char *path, char **argv, int stacksize)
     cursor = cursor->th.next;
   } 
 
-  // ptable_lk_release();
+  ptable_lk_release();
+  //cprintf("exec: end of settings\n");
   /*
    * check whether the thread has exited and remove thread
    * delayed exit to make ptable unused
    */
+  // if(curproc!=curproc->th.next) for(;;);
 
+  // cprintf("curproc -> pid: %d, tid: %d, parent: %d\n", cursor->pid, cursor->th.tid, cursor->parent->pid);
   ptable_lk_acquire();
   int break_flag = 1;
   for(;;){
     break_flag = 1;
     cursor = curproc->th.next; 
     while(cursor != curproc){
+      // cprintf("await cursor pid: %d, tid: %d\n", cursor->pid, cursor->th.tid);
 
-      if(cursor->state == DELAYED){
+      if(cursor->state==UNUSED){
+        cursor = cursor->th.next;
+        continue;
+      }
+      break_flag = 0;
+
+      if(cursor->state != RUNNING){
+
+        // cprintf("pid: %d, tid: %d, parent: %d, state: %d, killed: %d\n", cursor->pid, cursor->th.tid, cursor->parent->pid, cursor->state, cursor->killed);
         kfree(cursor->kstack);
         cursor->kstack = 0;
         cursor->state = UNUSED;
-        cursor->th.prev->th.next = cursor->th.next;
-        cursor->th.next->th.prev = cursor->th.prev;
-        break_flag = 1;
-      }
-      else {
-        break_flag = 0;
+        cursor->pid = 0;
+        cursor->parent = 0;
+        cursor->name[0] = 0;
+        cursor->killed = 0;
+        cursor->delayed_exit = 0;
       }
       cursor = cursor->th.next; 
     }
+    //cprintf("end of while\n");
+
     if(break_flag==1) {
+      //cprintf("break!\n");
       break;
     }
-    sleep_wrapper(curproc);
+      // sleep_wrapper(curproc);
   }
   curproc->th.main = curproc;
+  curproc->th.next= curproc;
+  curproc->th.prev = curproc;
   curproc->sz_limit = 0;
   ptable_lk_release();
+
+  /*
+   * method2
+   */
+
+  // ptable_lk_acquire();
+  //
+  // cursor = curproc->th.next; 
+  // while(cursor!=curproc){
+  //   kfree(cursor->kstack);
+  //   cursor->kstack = 0;
+  //   cursor->state = UNUSED;
+  //
+  //
+  //   cursor = cursor->th.next;
+  // } 
+  // curproc->th.main = curproc;
+  // curproc->th.next= curproc;
+  // curproc->th.prev = curproc;
+  // curproc->sz_limit = 0;
+  //
+  // ptable_lk_release();
+
 
   begin_op();
 

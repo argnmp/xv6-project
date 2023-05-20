@@ -263,11 +263,9 @@ fork(void)
   np->sz_base = curproc->sz_base;
   np->sz_limit = curproc->sz_limit;
    
-  
 
   // Clear %eax so that fork returns 0 in the child.
   np->tf->eax = 0;
-
   for(i = 0; i < NOFILE; i++)
     if(curproc->ofile[i])
       np->ofile[i] = filedup(curproc->ofile[i]);
@@ -298,6 +296,7 @@ exit(void)
   struct proc *curproc = myproc();
   struct proc *p;
   int fd;
+  cprintf("exit called: pid %d, tid %d, killed %d\n", curproc->pid, curproc->th.tid, curproc->killed);
 
   if(curproc == initproc)
     panic("init exiting");
@@ -319,11 +318,10 @@ exit(void)
   acquire(&ptable.lock);
 
   if(curproc->delayed_exit == 1){
+    //cprintf("delayed exit\n");
     curproc->state = DELAYED;
     curproc->delayed_exit = 0;
-    // curproc->th.prev->th.next = curproc->th.next;
-    // curproc->th.next->th.prev = curproc->th.prev;
-    wakeup1(curproc->delayed_exit_addr);
+    // wakeup1(curproc->delayed_exit_addr);
     sched();
     panic("zombie exit");
   }
@@ -697,11 +695,9 @@ procdump(void)
 
 void ptable_lk_acquire(){
   acquire(&ptable.lock);
-  return;
 }
 void ptable_lk_release(){
   release(&ptable.lock);
-  return;
 }
 void wakeup1_wrapper(void* chan){
   wakeup1(chan);
@@ -839,9 +835,7 @@ void thread_exit(void *retval){
   if(curproc->delayed_exit == 1){
     curproc->state = DELAYED;
     curproc->delayed_exit = 0;
-    // curproc->th.prev->th.next = curproc->th.next;
-    // curproc->th.next->th.prev = curproc->th.prev;
-    wakeup1(curproc->delayed_exit_addr);
+    // wakeup1(curproc->delayed_exit_addr);
     sched();
     panic("zombie exit");
   }
