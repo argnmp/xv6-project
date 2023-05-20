@@ -49,6 +49,7 @@ void remove_th(struct proc* p){
   p->name[0] = 0;
   p->killed = 0;
   p->state = UNUSED;
+  p->delayed_exit = 0;
   // add thread's address space to process's thstack space for later use
   save_thmem(p, p->th.main);
 }

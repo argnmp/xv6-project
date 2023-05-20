@@ -98,6 +98,7 @@ found:
   p->th.main = p;
   p->th.next = p;
   p->th.prev = p;
+  p->delayed_exit = 0;
 
   release(&ptable.lock);
 
@@ -301,6 +302,7 @@ exit(void)
   if(curproc == initproc)
     panic("init exiting");
 
+
   // Close all open files.
   for(fd = 0; fd < NOFILE; fd++){
     if(curproc->ofile[fd]){
@@ -315,6 +317,16 @@ exit(void)
   curproc->cwd = 0;
 
   acquire(&ptable.lock);
+
+  if(curproc->delayed_exit == 1){
+    curproc->state = DELAYED;
+    curproc->delayed_exit = 0;
+    // curproc->th.prev->th.next = curproc->th.next;
+    // curproc->th.next->th.prev = curproc->th.prev;
+    wakeup1(curproc->delayed_exit_addr);
+    sched();
+    panic("zombie exit");
+  }
 
   // Parent might be sleeping in wait().
   wakeup1(curproc->parent);
@@ -376,6 +388,7 @@ wait(void)
         p->name[0] = 0;
         p->killed = 0;
         p->state = UNUSED;
+        p->delayed_exit = 0;
         release(&ptable.lock);
         return pid;
       }
@@ -678,6 +691,26 @@ procdump(void)
   }
 }
 
+/*
+ * These two functions are used for acquire and relase lock from outside of proc
+ */
+
+void ptable_lk_acquire(){
+  acquire(&ptable.lock);
+  return;
+}
+void ptable_lk_release(){
+  release(&ptable.lock);
+  return;
+}
+void wakeup1_wrapper(void* chan){
+  wakeup1(chan);
+}
+void sleep_wrapper(void *chan){
+  sleep(chan, &ptable.lock);
+}
+
+
 
 int thread_create(thread_t *thread, void *(*start_routine)(void *), void *arg){
   // int i, pid;
@@ -788,23 +821,31 @@ void thread_exit(void *retval){
   if(curproc == initproc)
     panic("init exiting");
 
-  // int fd;
-  // for(fd = 0; fd < NOFILE; fd++){
-  //   if(curproc->ofile[fd]){
-  //     fileclose(curproc->ofile[fd]);
-  //     curproc->ofile[fd] = 0;
-  //   }
-  // }
-  //
-  // begin_op();
-  // iput(curproc->cwd);
-  // end_op();
-  // curproc->cwd = 0;
+  int fd;
+  for(fd = 0; fd < NOFILE; fd++){
+    if(curproc->ofile[fd]){
+      fileclose(curproc->ofile[fd]);
+      curproc->ofile[fd] = 0;
+    }
+  }
 
-  /*
-   * do not close file because multiple threads share files that belongs to the same process
-   */
+  begin_op();
+  iput(curproc->cwd);
+  end_op();
+  curproc->cwd = 0;
+
   acquire(&ptable.lock);
+
+  if(curproc->delayed_exit == 1){
+    curproc->state = DELAYED;
+    curproc->delayed_exit = 0;
+    // curproc->th.prev->th.next = curproc->th.next;
+    // curproc->th.next->th.prev = curproc->th.prev;
+    wakeup1(curproc->delayed_exit_addr);
+    sched();
+    panic("zombie exit");
+  }
+
   /*
    * wakeup all threads that are sleeping on process that they are belongs to
    * because thread can call thread_join for another thread
@@ -848,4 +889,3 @@ int thread_join(thread_t thread, void **retval){
     sleep(curproc, &ptable.lock);
   }
 }
-

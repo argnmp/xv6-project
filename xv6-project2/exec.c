@@ -18,6 +18,62 @@ exec(char *path, char **argv)
   struct proghdr ph;
   pde_t *pgdir, *oldpgdir;
   struct proc *curproc = myproc();
+  struct proc *cursor;
+
+  /*
+   * remove all threads except for current thread
+   * This task requires ptable.lock
+   * delayed exit is used for this sequence
+   */
+  // ptable_lk_acquire();
+  
+  cursor = curproc->th.next; 
+  while(cursor!=curproc){
+    cursor->delayed_exit = 1;
+    cursor->delayed_exit_addr = curproc;
+    cursor->killed = 1;
+    wakeup1_wrapper(cursor);
+    cursor = cursor->th.next;
+  } 
+
+  // ptable_lk_release();
+  /*
+   * check whether the thread has exited and remove thread
+   * delayed exit to make ptable unused
+   */
+
+  // cprintf("curproc -> pid: %d, tid: %d, parent: %d\n", cursor->pid, cursor->th.tid, cursor->parent->pid);
+  ptable_lk_acquire();
+  int break_flag = 1;
+  for(;;){
+    break_flag = 1;
+    cursor = curproc->th.next; 
+    while(cursor != curproc){
+      if(cursor->state == DELAYED){
+        // cprintf("pid: %d, tid: %d delayed!, parent: %d\n", cursor->pid, cursor->th.tid, cursor->parent->pid);
+        kfree(cursor->kstack);
+        cursor->kstack = 0;
+        cursor->state = UNUSED;
+        cursor->th.prev->th.next = cursor->th.next;
+        cursor->th.next->th.prev = cursor->th.prev;
+        break_flag = 1;
+      }
+      else {
+        break_flag = 0;
+      }
+      cursor = cursor->th.next; 
+    }
+    if(break_flag==1) {
+      break;
+    }
+    sleep_wrapper(curproc);
+  }
+  curproc->th.main = curproc;
+  curproc->th.next= curproc;
+  curproc->th.prev = curproc;
+  curproc->sz_limit = 0;
+  ptable_lk_release();
+
 
   begin_op();
 
@@ -103,6 +159,9 @@ exec(char *path, char **argv)
   safestrcpy(curproc->name, last, sizeof(curproc->name));
 
   // Commit to the user image.
+  /*
+   * need to reset thread data
+   */
   oldpgdir = curproc->pgdir;
   curproc->pgdir = pgdir;
   curproc->sz = sz;
@@ -142,6 +201,58 @@ exec2(char *path, char **argv, int stacksize)
   struct proghdr ph;
   pde_t *pgdir, *oldpgdir;
   struct proc *curproc = myproc();
+  struct proc *cursor;
+
+  /*
+   * remove all threads except for current thread
+   * This task requires ptable.lock
+   * delayed exit is used for this sequence
+   */
+  // ptable_lk_acquire();
+  
+  cursor = curproc->th.next; 
+  while(cursor!=curproc){
+    cursor->delayed_exit = 1;
+    cursor->delayed_exit_addr = curproc;
+    cursor->killed = 1;
+    wakeup1_wrapper(cursor);
+    cursor = cursor->th.next;
+  } 
+
+  // ptable_lk_release();
+  /*
+   * check whether the thread has exited and remove thread
+   * delayed exit to make ptable unused
+   */
+
+  ptable_lk_acquire();
+  int break_flag = 1;
+  for(;;){
+    break_flag = 1;
+    cursor = curproc->th.next; 
+    while(cursor != curproc){
+
+      if(cursor->state == DELAYED){
+        kfree(cursor->kstack);
+        cursor->kstack = 0;
+        cursor->state = UNUSED;
+        cursor->th.prev->th.next = cursor->th.next;
+        cursor->th.next->th.prev = cursor->th.prev;
+        break_flag = 1;
+      }
+      else {
+        break_flag = 0;
+      }
+      cursor = cursor->th.next; 
+    }
+    if(break_flag==1) {
+      break;
+    }
+    sleep_wrapper(curproc);
+  }
+  curproc->th.main = curproc;
+  curproc->sz_limit = 0;
+  ptable_lk_release();
 
   begin_op();
 

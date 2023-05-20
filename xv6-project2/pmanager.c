@@ -32,6 +32,7 @@ int run(struct args_s* args){
    * custom test
    */
   if(strcmp(args->arg[0], "test")==0){
+    printf(1, "test\n");
     if(strcmp(args->arg[1], "")==0 || strcmp(args->arg[2], "")==0){
       return 0; 
     }
@@ -45,13 +46,15 @@ int run(struct args_s* args){
       execargv[0] = path;
 
       if(pid==0){
+        listcmd();
         exec(execargv[0], execargv); 
       }
       else if(pid < 0){
         printf(1, "execute failed\n");
       }
       else {
-        wait();
+        int res = wait();
+        printf(1, "wait res: %d\n", res);
       }
       printf(1, "test %d end\n", i);
     }

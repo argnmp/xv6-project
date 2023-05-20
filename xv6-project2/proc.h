@@ -32,7 +32,7 @@ struct context {
   uint eip;
 };
 
-enum procstate { UNUSED, EMBRYO, SLEEPING, RUNNABLE, RUNNING, ZOMBIE };
+enum procstate { UNUSED, EMBRYO, SLEEPING, RUNNABLE, RUNNING, ZOMBIE, DELAYED};
 
 // store data for thread
 struct thread{
@@ -59,6 +59,16 @@ struct proc {
   struct inode *cwd;           // Current directory
   char name[16];               // Process name (debugging)
   uint ssz;                    // stack size
+
+  /*
+   * this flag is used to manually control exit and thread_exit sequence
+   * used by exec
+   * in exit() and thread_exit(), if this flag is set, just make state DELAYED and unset the flag and return
+   * if this value is 0, no delayed_exit
+   * delayed_exit is set to address of process
+   */
+  int delayed_exit;
+  struct proc* delayed_exit_addr;
 
   /*
    * only valid values for main thread

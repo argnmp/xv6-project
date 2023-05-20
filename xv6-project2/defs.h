@@ -123,6 +123,10 @@ void            wakeup(void*);
 void            yield(void);
 int             setmemorylimit(int, int);
 int             procinfo(struct proc_info_s*);
+void            ptable_lk_acquire();
+void            ptable_lk_release();
+void            wakeup1_wrapper(void*);
+void            sleep_wrapper(void*);
 
 // thread implementation in proc.c
 int             thread_create(thread_t*, void*(void*), void*);
