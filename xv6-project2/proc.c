@@ -590,22 +590,32 @@ wakeup(void *chan)
 int
 kill(int pid)
 {
+  int kill_succ = 0;
   struct proc *p;
+
+  /*
+   * set killed flag to all threads that share same pid
+   */
 
   acquire(&ptable.lock);
   for(p = ptable.proc; p < &ptable.proc[NPROC]; p++){
     if(p->pid == pid){
+      kill_succ = 1;
       p->killed = 1;
       // Wake process from sleep if necessary.
-      if(p->state == SLEEPING)
+      if(p->state == SLEEPING){
         p->state = RUNNABLE;
-      release(&ptable.lock);
-      return 0;
+      }
     }
+  }
+  if(kill_succ == 1){
+    release(&ptable.lock);
+    return 0;
   }
   release(&ptable.lock);
   return -1;
 }
+
 
 /*
  * set memory allocation limit of a process
