@@ -19,6 +19,12 @@ fetchint(uint addr, int *ip)
 {
   struct proc *curproc = myproc();
 
+  ptable_lk_acquire();
+  if(curproc!=curproc->th.main){
+    curproc = curproc->th.main;
+  } 
+  ptable_lk_release();
+
   if(addr >= curproc->sz || addr+4 > curproc->sz){
     cprintf("pid:%d, tid: %d, addr: %d, curproc->sz: %d\n",curproc->pid, curproc->th.tid, addr, curproc->sz);
 
@@ -36,6 +42,12 @@ fetchstr(uint addr, char **pp)
 {
   char *s, *ep;
   struct proc *curproc = myproc();
+
+  ptable_lk_acquire();
+  if(curproc!=curproc->th.main){
+    curproc = curproc->th.main;
+  } 
+  ptable_lk_release();
 
   if(addr >= curproc->sz)
     return -1;
@@ -63,6 +75,12 @@ argptr(int n, char **pp, int size)
 {
   int i;
   struct proc *curproc = myproc();
+
+  ptable_lk_acquire();
+  if(curproc!=curproc->th.main){
+    curproc = curproc->th.main;
+  } 
+  ptable_lk_release();
  
   if(argint(n, &i) < 0)
     return -1;
