@@ -173,22 +173,42 @@ growproc(int n)
   uint sz_limit;
   struct proc *curproc = myproc();
 
+  /*
+   * if curproc is not main thread,
+   * change to main thread and grow it size
+   * ptable lock is needed
+   */
+  acquire(&ptable.lock);
+  curproc = curproc->th.main;
+
   sz = curproc->sz;
   sz_limit = curproc->sz_limit;
   // check if requested memory exceeds memory limit of process
   if(sz_limit!=0 && sz+n > sz_limit){
     //cprintf("n: %d, sz: %d, sz_limit: %d, limit exceed\n", n, sz, sz_limit);
+    release(&ptable.lock);
     return -1;
   }
   if(n > 0){
-    if((sz = allocuvm(curproc->pgdir, sz, sz + n)) == 0)
+    if((sz = allocuvm(curproc->pgdir, sz, sz + n)) == 0){
+      release(&ptable.lock);
       return -1;
+    }
   } else if(n < 0){
-    if((sz = deallocuvm(curproc->pgdir, sz, sz + n)) == 0)
+    if((sz = deallocuvm(curproc->pgdir, sz, sz + n)) == 0){
+      release(&ptable.lock);
       return -1;
+
+    }
   }
+
   curproc->sz = sz;
+  curproc = myproc();
+
   switchuvm(curproc);
+
+  release(&ptable.lock);
+
   return 0;
 }
 
@@ -275,7 +295,6 @@ fork(void)
 
   pid = np->pid;
 
-  /*change!*/
   release(&ptable.lock);
 
   acquire(&ptable.lock);
@@ -296,7 +315,7 @@ exit(void)
   struct proc *curproc = myproc();
   struct proc *p;
   int fd;
-  cprintf("exit called: pid %d, tid %d, killed %d\n", curproc->pid, curproc->th.tid, curproc->killed);
+  //cprintf("exit called: pid %d, tid %d, killed %d\n", curproc->pid, curproc->th.tid, curproc->killed);
 
   if(curproc == initproc)
     panic("init exiting");

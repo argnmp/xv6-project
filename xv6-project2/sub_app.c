@@ -15,12 +15,16 @@ int listcmd(){
   }
   return 0;
 }
+struct task{
+  int* addr; 
+  int idx;
+};
 void* temp2(void* args){
-  int* ret = 0;
-  for(;;){
-    dbg("hello world");
+  struct task* t = args;
+  for(int i = 0; i<10000; i++){
+    t->addr[t->idx] += t->idx;
   }
-  thread_exit(&ret);
+  thread_exit(0);
   return 0;
 }
 void* temp1(void* args){
@@ -34,22 +38,30 @@ void* temp1(void* args){
   return 0;
 }
 int main(int argc, char * argv[]){
-  int retval = 0;
   thread_t tids[WORKER1] = {0,};
+  int* buf = (int*)sbrk(sizeof(int)*10);
   for(int i = 0; i<WORKER1; i++){
-    int res = thread_create(&tids[i], temp2, (int*)i);
+    struct task* t = (struct task*)sbrk(sizeof(struct task));
+    t->addr = buf;
+    t->idx = i;
+    int res = thread_create(&tids[i], temp2, t);
     if(res < 0)
       dbg("thc failed");
   }
-  sleep(30);
-  dbg("before exec");
-  char* execargv[10]; 
-  execargv[0] = "ls";
-  int res = exec(execargv[0], execargv);
-  dbg("res: %d", res);
-  
+  // sleep(30);
+  // dbg("before exec");
+  // char* execargv[10]; 
+  // execargv[0] = "ls";
+  // int res = exec(execargv[0], execargv);
+  // dbg("res: %d", res);
+  int* retval;
   for(int i = 0; i<WORKER1; i++){
+    dbg("join th %d", tids[i]);
     thread_join(tids[i], (void*)&retval);
   }
+  for(int i = 0; i<10; i++){
+    dbg("%d", buf[i]);
+  }
+  
   exit();
 }
