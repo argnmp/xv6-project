@@ -875,11 +875,14 @@ int thread_join(thread_t thread, void **retval){
   int havethreads, havetargetthread;
   struct proc *curproc = myproc();
   acquire(&ptable.lock);
+  /*
+   * search by using main thread
+   */
   for(;;){
     havethreads = 0;
     havetargetthread = 0;
     for(p = ptable.proc; p < &ptable.proc[NPROC]; p++){
-      if(p->th.main != curproc)
+      if(p->th.main != curproc->th.main)
         continue;
       havethreads = 1;
       if(p->th.tid != thread)
@@ -899,6 +902,6 @@ int thread_join(thread_t thread, void **retval){
       release(&ptable.lock);
       return -1;
     }
-    sleep(curproc, &ptable.lock);
+    sleep(curproc->th.main, &ptable.lock);
   }
 }
