@@ -813,8 +813,6 @@ int thread_create(thread_t *thread, void *(*start_routine)(void *), void *arg){
 
   safestrcpy(np->name, np->th.main->name, sizeof(np->th.main->name));
 
-  release(&ptable.lock);
-
   sp -= 8;
   ((uint*)sp)[0] = 0xfffffff;
   ((uint*)sp)[1] = (uint)arg;
@@ -824,8 +822,6 @@ int thread_create(thread_t *thread, void *(*start_routine)(void *), void *arg){
   np->tf->esp = sp;
   //cprintf("pid: %d, tid: %d, in thread_create, sp: %d, sz: %d\n",np->pid, np->th.tid, sp,sz);
   *thread = np->th.tid;
-
-  acquire(&ptable.lock);
 
   if(reuse_flag==0){
     np->th.main->sz = sz; 
