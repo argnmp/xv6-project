@@ -1,9 +1,9 @@
 #include "types.h"
 #include "stat.h"
 #include "user.h"
-#define dbg(fmt, args...) printf(1, "[%s: %d] pid %d | " fmt "\n",__FUNCTION__, __LINE__, getpid(), ##args)
-#define WORKER1 1
-#define WORKER2 5
+#define dbg(fmt, args...) printf(1, "[%d: %s] pid %d | " fmt "\n",__LINE__, __FUNCTION__, getpid(), ##args)
+#define WORKER1 5
+#define WORKER2 6
 int listcmd(){
   struct proc_info_s pinfos; 
   int res = procinfo(&pinfos);
@@ -15,75 +15,139 @@ int listcmd(){
   }
   return 0;
 }
-struct task{
+/*
+ * sbrk test
+ */
+
+/* struct task{
   int* addr; 
   int idx;
 };
-void* temp3(void* args){
-  dbg("%d", (int)args);
-  thread_exit((void*)888); 
-  return 0;
-}
-void* temp2(void* args){
-  int tid;
-  int* retval;
+void* job(void* args){
+  int* res = (int*)sbrk(sizeof(int));
   struct task* t = args;
-
-  thread_create(&tid, temp3, (int*)(t->idx));
-
-  int res = thread_join(tid, (void*)&retval);
-  dbg("res: %d, result: %d", res, retval);
-  for(;;);
-
-  for(int i = 0; i<10000; i++){
-    t->addr[t->idx] += t->idx;
+  int sum = 0;
+  // add given values
+  for(int i = 0; i<10; i++){
+    sum += t->addr[i];
   }
-  //sleep(10000);
-  thread_exit((int*)777);
-  return 0;
-}
-void* temp1(void* args){
-  //listcmd();
-  int* ret;
-  char* execargv[10]; 
-  execargv[0] = "test_app";
-  int res = exec(execargv[0], execargv);
-  dbg("res: %d", res);
-  thread_exit(&ret); 
+  // add signature value
+  sum += t->idx * 100000;
+  *res = sum;
+  thread_exit(res);
   return 0;
 }
 int main(int argc, char * argv[]){
   thread_t tids[WORKER1] = {0,};
   int* buf = (int*)sbrk(sizeof(int)*10);
-  if((int)buf == -1){
-    dbg("sbrk failed");
-    exit();
+  for(int i = 0; i<10; i++){
+    buf[i] = 70+i;
   }
-  
   for(int i = 0; i<WORKER1; i++){
     struct task* t = (struct task*)sbrk(sizeof(struct task));
-    if((int)t == -1){
-      dbg("sbrk failed");
-      exit();
-    }
     t->addr = buf;
     t->idx = i;
-    int res = thread_create(&tids[i], temp2, t);
+    int res = thread_create(&tids[i], job, t);
     if(res < 0)
-      dbg("thc failed");
-  }
-  for(;;){
-    sleep(10);
-    dbg("__________________hello world_______________ from main");
+      dbg("thread create failed");
   }
   int* retval;
   for(int i = 0; i<WORKER1; i++){
     thread_join(tids[i], (void*)&retval);
-    dbg("join th %d, retval %d", tids[i], retval);
+    dbg("join th %d, res: %d", tids[i], *retval);
   }
-  // for(int i = 0; i<10; i++){
-  //   dbg("%d", buf[i]);
-  // }
   
   exit();
+} */
+
+/*
+ * exec test
+ */
+/* void* job(void* args){
+  if((int)args == 5){
+    char* execargv[10]; 
+    execargv[0] = "ls";
+    int res = exec(execargv[0], execargv);
+    if(res < 0){
+      dbg("exec failed\n");
+    }
+  }
+  thread_exit(0);
+  return 0;
 }
+int main(int argc, char* argv[]){
+  thread_t tids[WORKER1] = {0,}; 
+  for(int i = 0; i<WORKER1; i++){
+    thread_create(&tids[i], job, (void*)i);
+  }
+  int* retval;
+  for(int i = 0; i<WORKER1; i++){
+    thread_join(tids[i], (void*)&retval);
+  }
+  exit(); 
+} */
+
+/*
+ * fork test
+ */
+/* void* subtask(void* args){
+  int* ret = (int*)((int)700+(int)args);
+  thread_exit(ret);
+  return 0;
+}
+void* task(void* args){
+  int* ret = (int*)((int)200+(int)args);
+
+  int pid = fork();
+  if(pid == 0){
+
+    int retval = 0;
+    thread_t tids[WORKER2] = {0,};
+    for(int i = 0; i<WORKER2; i++){
+      thread_create(&tids[i], subtask, (int*)i);
+      thread_join(tids[i], (void*)&retval);
+      dbg("tid %d -> subtask result: %d", tids[i], (int)retval);
+    }
+    exit();
+  }
+  wait();
+  dbg("subtask finished");
+  thread_exit(ret);
+  return 0;
+}
+int main(int argc, char * argv[]){
+  thread_t tids[WORKER1] = {0,};
+  int retval = 0;
+  for(int i = 0; i<WORKER1; i++){
+    thread_create(&tids[i], task, (void*)i);
+    thread_join(tids[i], (void*)&retval);
+    dbg("tid %d -> task result: %d", tids[i], (int)retval);
+    printf(1, "\n");
+  }
+  exit();
+} */
+/*
+ * kill test
+ */
+/* void* job(void* args){
+  if((int)args == 4){
+    dbg("sleep start");
+    sleep(100);
+    dbg("sleep end");
+    kill(getpid());
+  }
+  sleep(100000);
+  thread_exit(0);
+  return 0;
+}
+int main(int argc, char* argv[]){
+  thread_t tids[WORKER1] = {0,}; 
+  for(int i = 0; i<WORKER1; i++){
+    thread_create(&tids[i], job, (void*)i);
+  }
+  int* retval;
+  for(int i = 0; i<WORKER1; i++){
+    thread_join(tids[i], (void*)&retval);
+  }
+  exit(); 
+} */
