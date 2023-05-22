@@ -40,6 +40,7 @@ struct thread{
   struct proc* main;
   struct proc* prev; // connects threads belongs to main
   struct proc* next; // connects threads belongs to main
+  struct proc* pth;
   void* retval;
 };
 

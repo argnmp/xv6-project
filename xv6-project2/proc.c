@@ -768,6 +768,7 @@ int thread_create(thread_t *thread, void *(*start_routine)(void *), void *arg){
   curproc->th.next = np;
   np->th.prev = curproc;
   np->th.next->th.prev = np;
+  np->th.pth = curproc;
   
   ssz = np->th.main->ssz;
 
@@ -866,10 +867,9 @@ void thread_exit(void *retval){
   }
 
   /*
-   * wakeup all threads that are sleeping on process that they are belongs to
-   * because thread can call thread_join for another thread
+   * wakeup parent thread
    */
-  wakeup1(curproc->th.main);
+  wakeup1(curproc->th.pth);
 
   curproc->state = ZOMBIE;
   curproc->th.retval = retval;
@@ -908,6 +908,6 @@ int thread_join(thread_t thread, void **retval){
       release(&ptable.lock);
       return -1;
     }
-    sleep(curproc->th.main, &ptable.lock);
+    sleep(curproc, &ptable.lock);
   }
 }
