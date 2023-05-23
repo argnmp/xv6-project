@@ -36,11 +36,11 @@ enum procstate { UNUSED, EMBRYO, SLEEPING, RUNNABLE, RUNNING, ZOMBIE, DELAYED};
 
 // store data for thread
 struct thread{
-  int tid; // Thread ID, -1 means main thread(process itself)
+  int tid;
   struct proc* main;
   struct proc* prev; // connects threads belongs to main
   struct proc* next; // connects threads belongs to main
-  struct proc* pth;
+  struct proc* pth; // used for joining threads
   void* retval;
 };
 
