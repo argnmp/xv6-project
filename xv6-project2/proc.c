@@ -750,20 +750,24 @@ int thread_create(thread_t *thread, void *(*start_routine)(void *), void *arg){
 
   acquire(&ptable.lock);
 
+  /*
+   * set basic thread values
+   */
   np->th.main = curproc->th.main;
   np->pgdir = np->th.main->pgdir;
   np->pid = np->th.main->pid;
   np->parent = np->th.main->parent;
   sz = np->th.main->sz;
-  //cprintf("pid: %d, tid: %d, thmain tid: %d, before sz: %d\n", np->pid, np->th.tid, np->th.main->th.tid, sz);
 
   /*
-   * set thread info
+   * pid should remain same
    */
   nextpid -= 1;
   np->pid = np->th.main->pid;
 
-  // connect threads
+  /*
+   * connect thread using linked list
+   */
   np->th.next = curproc->th.next;
   curproc->th.next = np;
   np->th.prev = curproc;
@@ -771,12 +775,22 @@ int thread_create(thread_t *thread, void *(*start_routine)(void *), void *arg){
   np->th.pth = curproc;
   
   ssz = np->th.main->ssz;
-
+  
+  /*
+   * copy trap frame from main thread
+   * from fork()
+   */
   *np->tf = *(np->th.main->tf);
+
+  /*
+   * set eip of trapframe to start_routine
+   * from exec()
+   */
   np->tf->eip = (uint)start_routine;
 
   /*
-   * allocate 2 pages for thread stack
+   * 1 page for stack, 1 page for guard
+   * if saved memory for thread exists, use it
    */
   int reuse_flag = 0;
   uint p = load_thmem(np);
@@ -796,7 +810,34 @@ int thread_create(thread_t *thread, void *(*start_routine)(void *), void *arg){
     //cprintf("pid:%d, tid:%d, reuse!\n", curproc->pid, curproc->th.tid);
     sz = p;
   }
+  /*
+   * set fake return PC and argv pointer
+   * from exec()
+   */
   sp = sz;
+  sp -= 8;
+  ((uint*)sp)[0] = 0xfffffff;
+  ((uint*)sp)[1] = (uint)arg;
+  
+  /* set stack pointer
+   * from exec()
+   */
+  np->tf->esp = sp;
+
+  *thread = np->th.tid;
+
+  if(reuse_flag==0){
+    /*
+     * if memory newly allocated for thread, update main thread's values
+     */
+    np->th.main->sz = sz; 
+    np->th.main->ssz = ssz;
+  }
+  np->sz = sz;
+  np->ssz = 1*PGSIZE;
+  np->sz_base = sz;
+  np->sz_limit = sz;
+  np->state = RUNNABLE;
 
   /*
    * copy file descriptor of main
@@ -806,33 +847,8 @@ int thread_create(thread_t *thread, void *(*start_routine)(void *), void *arg){
     if(np->th.main->ofile[i])
       np->ofile[i] = filedup(np->th.main->ofile[i]);
   np->cwd = idup(np->th.main->cwd);
-  // int i;
-  // for(i = 0; i < NOFILE; i++)
-  //   if(np->th.main->ofile[i])
-  //     np->ofile[i] = np->th.main->ofile[i];
-  // np->cwd = np->th.main->cwd;
 
   safestrcpy(np->name, np->th.main->name, sizeof(np->th.main->name));
-
-  sp -= 8;
-  ((uint*)sp)[0] = 0xfffffff;
-  ((uint*)sp)[1] = (uint)arg;
-  
-  
-
-  np->tf->esp = sp;
-  //cprintf("pid: %d, tid: %d, in thread_create, sp: %d, sz: %d\n",np->pid, np->th.tid, sp,sz);
-  *thread = np->th.tid;
-
-  if(reuse_flag==0){
-    np->th.main->sz = sz; 
-    np->th.main->ssz = ssz;
-  }
-  np->sz = sz;
-  np->ssz = 1*PGSIZE;
-  np->sz_base = sz;
-  np->sz_limit = sz;
-  np->state = RUNNABLE;
 
   release(&ptable.lock);
   return 0; 

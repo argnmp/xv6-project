@@ -129,7 +129,7 @@ int main(int argc, char * argv[]){
 /*
  * kill test
  */
-/* void* job(void* args){
+void* job(void* args){
   if((int)args == 4){
     dbg("sleep start");
     sleep(100);
@@ -150,4 +150,4 @@ int main(int argc, char* argv[]){
     thread_join(tids[i], (void*)&retval);
   }
   exit(); 
-} */
+}
