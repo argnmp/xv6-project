@@ -738,18 +738,14 @@ void sleep_wrapper(void *chan){
 
 
 int thread_create(thread_t *thread, void *(*start_routine)(void *), void *arg){
-  // int i, pid;
   struct proc *np;
   struct proc *curproc = myproc();
   if((np = allocproc()) == 0){
     return -1;
   }
-   
   uint sp, sz, ssz;
 
-
   acquire(&ptable.lock);
-
   /*
    * set basic thread values
    */
@@ -791,6 +787,7 @@ int thread_create(thread_t *thread, void *(*start_routine)(void *), void *arg){
   /*
    * 1 page for stack, 1 page for guard
    * if saved memory for thread exists, use it
+   * from exec()
    */
   int reuse_flag = 0;
   uint p = load_thmem(np);
@@ -810,6 +807,7 @@ int thread_create(thread_t *thread, void *(*start_routine)(void *), void *arg){
     //cprintf("pid:%d, tid:%d, reuse!\n", curproc->pid, curproc->th.tid);
     sz = p;
   }
+
   /*
    * set fake return PC and argv pointer
    * from exec()
@@ -819,7 +817,8 @@ int thread_create(thread_t *thread, void *(*start_routine)(void *), void *arg){
   ((uint*)sp)[0] = 0xfffffff;
   ((uint*)sp)[1] = (uint)arg;
   
-  /* set stack pointer
+  /*
+   * set stack pointer
    * from exec()
    */
   np->tf->esp = sp;

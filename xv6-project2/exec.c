@@ -20,10 +20,6 @@ exec(char *path, char **argv)
   struct proc *curproc = myproc();
   struct proc *cursor;
 
-/*
- * method1
- */
-
   /*
    * remove all threads except for current thread
    * This task requires ptable.lock
@@ -41,14 +37,7 @@ exec(char *path, char **argv)
   } 
 
   ptable_lk_release();
-  //cprintf("exec: end of settings\n");
-  /*
-   * check whether the thread has exited and remove thread
-   * delayed exit to make ptable unused
-   */
-  // if(curproc!=curproc->th.next) for(;;);
 
-  // cprintf("curproc -> pid: %d, tid: %d, parent: %d\n", cursor->pid, cursor->th.tid, cursor->parent->pid);
   ptable_lk_acquire();
   int break_flag = 1;
   for(;;){
@@ -91,27 +80,6 @@ exec(char *path, char **argv)
   curproc->sz_limit = 0;
   ptable_lk_release();
 
-  /*
-   * method2
-   */
-
-  // ptable_lk_acquire();
-  //
-  // cursor = curproc->th.next; 
-  // while(cursor!=curproc){
-  //   kfree(cursor->kstack);
-  //   cursor->kstack = 0;
-  //   cursor->state = UNUSED;
-  //
-  //
-  //   cursor = cursor->th.next;
-  // } 
-  // curproc->th.main = curproc;
-  // curproc->th.next= curproc;
-  // curproc->th.prev = curproc;
-  // curproc->sz_limit = 0;
-  //
-  // ptable_lk_release();
 
   begin_op();
 
@@ -240,9 +208,6 @@ exec2(char *path, char **argv, int stacksize)
   pde_t *pgdir, *oldpgdir;
   struct proc *curproc = myproc();
   struct proc *cursor;
-/*
- * method1
- */
 
   /*
    * remove all threads except for current thread
@@ -261,14 +226,7 @@ exec2(char *path, char **argv, int stacksize)
   } 
 
   ptable_lk_release();
-  //cprintf("exec: end of settings\n");
-  /*
-   * check whether the thread has exited and remove thread
-   * delayed exit to make ptable unused
-   */
-  // if(curproc!=curproc->th.next) for(;;);
 
-  // cprintf("curproc -> pid: %d, tid: %d, parent: %d\n", cursor->pid, cursor->th.tid, cursor->parent->pid);
   ptable_lk_acquire();
   int break_flag = 1;
   for(;;){
@@ -310,29 +268,6 @@ exec2(char *path, char **argv, int stacksize)
   curproc->th.prev = curproc;
   curproc->sz_limit = 0;
   ptable_lk_release();
-
-  /*
-   * method2
-   */
-
-  // ptable_lk_acquire();
-  //
-  // cursor = curproc->th.next; 
-  // while(cursor!=curproc){
-  //   kfree(cursor->kstack);
-  //   cursor->kstack = 0;
-  //   cursor->state = UNUSED;
-  //
-  //
-  //   cursor = cursor->th.next;
-  // } 
-  // curproc->th.main = curproc;
-  // curproc->th.next= curproc;
-  // curproc->th.prev = curproc;
-  // curproc->sz_limit = 0;
-  //
-  // ptable_lk_release();
-
 
   begin_op();
 
