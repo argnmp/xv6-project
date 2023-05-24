@@ -594,12 +594,12 @@ kill(int pid)
   struct proc *p;
 
   /*
-   * set killed flag to all threads that share same pid
+   * set killed flag to main thread
    */
 
   acquire(&ptable.lock);
   for(p = ptable.proc; p < &ptable.proc[NPROC]; p++){
-    if(p->pid == pid){
+    if(p->pid == pid && p->th.main == p){
       kill_succ = 1;
       p->killed = 1;
       // Wake process from sleep if necessary.
