@@ -137,6 +137,7 @@ int             thread_join(thread_t, void**);
 int save_thmem(struct proc*, struct proc*);
 uint load_thmem(struct proc*);
 void remove_th(struct proc*);
+void delayed_exit(struct proc*, struct proc*);
 
 // swtch.S
 void            swtch(struct context**, struct context*);

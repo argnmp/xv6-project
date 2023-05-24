@@ -25,23 +25,8 @@ exec(char *path, char **argv)
    * This task requires ptable.lock
    * delayed exit is used for this sequence
    */
-  ptable_lk_acquire();
-
-  cursor = curproc->th.next; 
-  while(cursor!=curproc){
-    cursor->delayed_exit = 1;
-    cursor->delayed_exit_addr = curproc;
-    cursor->killed = 1;
-    wakeup1_wrapper(cursor);
-    cursor = cursor->th.next;
-  } 
-
-  ptable_lk_release();
 
   ptable_lk_acquire();
-  int break_flag = 1;
-  for(;;){
-    break_flag = 1;
     cursor = curproc->th.next; 
     while(cursor != curproc){
       // cprintf("await cursor pid: %d, tid: %d\n", cursor->pid, cursor->th.tid);
@@ -50,30 +35,29 @@ exec(char *path, char **argv)
         cursor = cursor->th.next;
         continue;
       }
-      break_flag = 0;
 
-      if(cursor->state != RUNNING){
-
-        // cprintf("pid: %d, tid: %d, parent: %d, state: %d, killed: %d\n", cursor->pid, cursor->th.tid, cursor->parent->pid, cursor->state, cursor->killed);
-        kfree(cursor->kstack);
-        cursor->kstack = 0;
-        cursor->state = UNUSED;
-        cursor->pid = 0;
-        cursor->parent = 0;
-        cursor->name[0] = 0;
-        cursor->killed = 0;
-        cursor->delayed_exit = 0;
+      if(cursor->state == RUNNING || cursor->state == RUNNABLE){
+        // cprintf("running\n!");
+        delayed_exit(curproc, cursor);
+        if(cursor->state != DELAYED) panic("wrong!");
       }
+
+      // cprintf("pid: %d, tid: %d, parent: %d, state: %d, killed: %d\n", cursor->pid, cursor->th.tid, cursor->parent->pid, cursor->state, cursor->killed);
+      kfree(cursor->kstack);
+      cursor->kstack = 0;
+      cursor->state = UNUSED;
+      cursor->pid = 0;
+      cursor->parent = 0;
+      cursor->name[0] = 0;
+      cursor->killed = 0;
+      cursor->delayed_exit = 0;
+
       cursor = cursor->th.next; 
+
     }
     //cprintf("end of while\n");
 
-    if(break_flag==1) {
-      //cprintf("break!\n");
-      break;
-    }
       // sleep_wrapper(curproc);
-  }
   curproc->th.main = curproc;
   curproc->th.next= curproc;
   curproc->th.prev = curproc;
@@ -214,23 +198,8 @@ exec2(char *path, char **argv, int stacksize)
    * This task requires ptable.lock
    * delayed exit is used for this sequence
    */
-  ptable_lk_acquire();
-
-  cursor = curproc->th.next; 
-  while(cursor!=curproc){
-    cursor->delayed_exit = 1;
-    cursor->delayed_exit_addr = curproc;
-    cursor->killed = 1;
-    wakeup1_wrapper(cursor);
-    cursor = cursor->th.next;
-  } 
-
-  ptable_lk_release();
 
   ptable_lk_acquire();
-  int break_flag = 1;
-  for(;;){
-    break_flag = 1;
     cursor = curproc->th.next; 
     while(cursor != curproc){
       // cprintf("await cursor pid: %d, tid: %d\n", cursor->pid, cursor->th.tid);
@@ -239,30 +208,29 @@ exec2(char *path, char **argv, int stacksize)
         cursor = cursor->th.next;
         continue;
       }
-      break_flag = 0;
 
-      if(cursor->state != RUNNING){
-
-        // cprintf("pid: %d, tid: %d, parent: %d, state: %d, killed: %d\n", cursor->pid, cursor->th.tid, cursor->parent->pid, cursor->state, cursor->killed);
-        kfree(cursor->kstack);
-        cursor->kstack = 0;
-        cursor->state = UNUSED;
-        cursor->pid = 0;
-        cursor->parent = 0;
-        cursor->name[0] = 0;
-        cursor->killed = 0;
-        cursor->delayed_exit = 0;
+      if(cursor->state == RUNNING || cursor->state == RUNNABLE){
+        // cprintf("running\n!");
+        delayed_exit(curproc, cursor);
+        if(cursor->state != DELAYED) panic("wrong!");
       }
+
+      // cprintf("pid: %d, tid: %d, parent: %d, state: %d, killed: %d\n", cursor->pid, cursor->th.tid, cursor->parent->pid, cursor->state, cursor->killed);
+      kfree(cursor->kstack);
+      cursor->kstack = 0;
+      cursor->state = UNUSED;
+      cursor->pid = 0;
+      cursor->parent = 0;
+      cursor->name[0] = 0;
+      cursor->killed = 0;
+      cursor->delayed_exit = 0;
+
       cursor = cursor->th.next; 
+
     }
     //cprintf("end of while\n");
 
-    if(break_flag==1) {
-      //cprintf("break!\n");
-      break;
-    }
       // sleep_wrapper(curproc);
-  }
   curproc->th.main = curproc;
   curproc->th.next= curproc;
   curproc->th.prev = curproc;

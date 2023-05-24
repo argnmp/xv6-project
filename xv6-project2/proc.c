@@ -340,7 +340,7 @@ exit(void)
     //cprintf("delayed exit\n");
     curproc->state = DELAYED;
     curproc->delayed_exit = 0;
-    // wakeup1(curproc->delayed_exit_addr);
+    wakeup1(curproc->delayed_exit_addr);
     sched();
     panic("zombie exit");
   }
@@ -876,7 +876,7 @@ void thread_exit(void *retval){
   if(curproc->delayed_exit == 1){
     curproc->state = DELAYED;
     curproc->delayed_exit = 0;
-    // wakeup1(curproc->delayed_exit_addr);
+    wakeup1(curproc->delayed_exit_addr);
     sched();
     panic("zombie exit");
   }

@@ -53,3 +53,10 @@ void remove_th(struct proc* p){
   // add thread's address space to process's thstack space for later use
   save_thmem(p, p->th.main);
 }
+void delayed_exit(struct proc* curproc, struct proc* target){
+  target->delayed_exit = 1;
+  target->delayed_exit_addr = curproc;
+  target->killed = 1;
+  wakeup1_wrapper(target);
+  sleep_wrapper(curproc);   
+}
