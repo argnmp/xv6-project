@@ -52,7 +52,6 @@ sys_sbrk(void)
     return -1;
   addr = myproc()->sz;
   if(myproc()->th.main != myproc()){
-    cprintf("sbrk process change\n");
     addr = myproc()->th.main->sz;
   }
   if(growproc(n) < 0)

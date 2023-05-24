@@ -4,7 +4,7 @@
 #define dbg(fmt, args...) printf(1, "[%d: %s] pid %d | " fmt "\n",__LINE__, __FUNCTION__, getpid(), ##args)
 #define WORKER 9
 #define WORKER2 4
-int listcmd(){
+/* int listcmd(){
   struct proc_info_s pinfos; 
   int res = procinfo(&pinfos);
   if(res < 0) return -1;  
@@ -59,16 +59,21 @@ int main(int argc, char * argv[]){
   int retval = 0;
   // int res;
   for(int i = 0; i<WORKER; i++){
-    /* res =  */thread_create(&tids[i], temp1, (int*)i);
+    thread_create(&tids[i], temp1, (int*)i);
     // dbg("th create, res: %d", res);
   }
   for(int i = 0; i<WORKER; i++){
     //dbg("1 / tid: %d, th join", tids[i]);
-    /* res =  */thread_join(tids[i], (void*)&retval);
+    thread_join(tids[i], (void*)&retval);
     //dbg("2 / tid: %d, th join", tids[i]);
     //dbg("tid:%d, th join, res: %d, retval: %d",tids[i], res, retval);
   }
   //dbg("before exit()");
   //for(;;);
+  exit();
+} */
+
+int main(int argc, char * argv[]){
+  dbg("----helloworld----");
   exit();
 }

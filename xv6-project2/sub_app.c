@@ -2,7 +2,7 @@
 #include "stat.h"
 #include "user.h"
 #define dbg(fmt, args...) printf(1, "[%d: %s] pid %d | " fmt "\n",__LINE__, __FUNCTION__, getpid(), ##args)
-#define WORKER1 5
+#define WORKER1 20
 #define WORKER2 6
 int listcmd(){
   struct proc_info_s pinfos; 
@@ -63,10 +63,10 @@ int main(int argc, char * argv[]){
 /*
  * exec test
  */
-/* void* job(void* args){
+void* job(void* args){
   if((int)args == 5){
     char* execargv[10]; 
-    execargv[0] = "ls";
+    execargv[0] = "test_app";
     int res = exec(execargv[0], execargv);
     if(res < 0){
       dbg("exec failed\n");
@@ -85,7 +85,7 @@ int main(int argc, char* argv[]){
     thread_join(tids[i], (void*)&retval);
   }
   exit(); 
-} */
+}
 
 /*
  * fork test
@@ -129,7 +129,7 @@ int main(int argc, char * argv[]){
 /*
  * kill test
  */
-void* job(void* args){
+/* void* job(void* args){
   if((int)args == 4){
     dbg("sleep start");
     sleep(100);
@@ -150,4 +150,4 @@ int main(int argc, char* argv[]){
     thread_join(tids[i], (void*)&retval);
   }
   exit(); 
-}
+} */
