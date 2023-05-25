@@ -322,19 +322,16 @@ exit(void)
   for(fd = 0; fd < NOFILE; fd++){
     if(curproc->ofile[fd]){
       if(curproc->delayed_exit != 1){
-        // close file if process is main thread
+        // close file if thread is not in delayed_exit state
         fileclose(curproc->ofile[fd]);
       }
       curproc->ofile[fd] = 0;
     }
   }
 
-  if(curproc->delayed_exit != 1){
-    // release inode if process is main thread
-    begin_op();
-    iput(curproc->cwd);
-    end_op();
-  }
+  begin_op();
+  iput(curproc->cwd);
+  end_op();
   curproc->cwd = 0;
 
   acquire(&ptable.lock);
@@ -848,7 +845,8 @@ int thread_create(thread_t *thread, void *(*start_routine)(void *), void *arg){
   for(i = 0; i < NOFILE; i++)
     if(np->th.main->ofile[i])
       np->ofile[i] = np->th.main->ofile[i];
-  np->cwd = np->th.main->cwd;
+
+  np->cwd = idup(curproc->cwd);
 
   safestrcpy(np->name, np->th.main->name, sizeof(np->th.main->name));
 
@@ -862,11 +860,18 @@ void thread_exit(void *retval){
     panic("init exiting");
 
   int fd;
+  /*
+   * thread does not free open files
+   * only freed by main thread(process)
+   */
   for(fd = 0; fd < NOFILE; fd++){
     if(curproc->ofile[fd]){
       curproc->ofile[fd] = 0;
     }
   }
+  begin_op();
+  iput(curproc->cwd);
+  end_op();
   curproc->cwd = 0;
 
   acquire(&ptable.lock);
