@@ -282,7 +282,6 @@ fork(void)
    * copy process info
    */
   np->ssz = curproc->ssz;
-  np->sz_base = curproc->sz_base;
   np->sz_limit = curproc->sz_limit;
    
 
@@ -679,7 +678,6 @@ procinfo(struct proc_info_s* pinfos){
       pinfos->proc_arr[pinfos->pcount].ssz = p->ssz;
       pinfos->proc_arr[pinfos->pcount].sz = p->sz;
       pinfos->proc_arr[pinfos->pcount].sz_limit = p->sz_limit;
-      pinfos->proc_arr[pinfos->pcount].sz_base = p->sz_base;
       pinfos->pcount += 1;
     }
   }
@@ -853,7 +851,6 @@ int thread_create(thread_t *thread, void *(*start_routine)(void *), void *arg){
   }
   np->sz = sz;
   np->ssz = 1*PGSIZE;
-  np->sz_base = sz;
   np->sz_limit = sz;
   np->state = RUNNABLE;
 

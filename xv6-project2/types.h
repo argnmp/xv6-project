@@ -13,7 +13,6 @@ struct proc_info_s{
     uint ssz;
     uint sz;
     uint sz_limit;
-    uint sz_base;
   } proc_arr[64];
   int pcount;
 };

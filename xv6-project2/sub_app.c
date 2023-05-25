@@ -10,7 +10,7 @@ int listcmd(){
   if(res < 0) return -1;  
   for(int i = 0; i < pinfos.pcount; i++){
     // printf(1, "pid: %d | tid: %d | number of stack pages: %d | allocated memory size: %d | memory limit %d\n", pinfos.proc_arr[i].pid, pinfos.proc_arr[i].tid, pinfos.proc_arr[i].ssz / PAGE_SIZE, pinfos.proc_arr[i].sz, pinfos.proc_arr[i].sz_limit); 
-    printf(1, "pid: %d | tid: %d | ssz: %d | sz: %d | sz_limit %d | sz_base %d\n", pinfos.proc_arr[i].pid, pinfos.proc_arr[i].tid, pinfos.proc_arr[i].ssz, pinfos.proc_arr[i].sz, pinfos.proc_arr[i].sz_limit, pinfos.proc_arr[i].sz_base); 
+    printf(1, "pid: %d | tid: %d | ssz: %d | sz: %d | sz_limit %d\n", pinfos.proc_arr[i].pid, pinfos.proc_arr[i].tid, pinfos.proc_arr[i].ssz, pinfos.proc_arr[i].sz, pinfos.proc_arr[i].sz_limit); 
 
   }
   return 0;
@@ -113,7 +113,7 @@ int main(int argc, char* argv[]){
 /*
  * fork test
  */
-/* void* subtask(void* args){
+void* subtask(void* args){
   int* ret = (int*)((int)700+(int)args);
   thread_exit(ret);
   return 0;
@@ -148,7 +148,7 @@ int main(int argc, char * argv[]){
     printf(1, "\n");
   }
   exit();
-} */
+}
 /*
  * kill test
  */
