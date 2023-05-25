@@ -19,7 +19,7 @@ int listcmd(){
  * sbrk test
  */
 
-/* struct task{
+struct task{
   int* addr; 
   int idx;
 };
@@ -58,7 +58,7 @@ int main(int argc, char * argv[]){
   }
   
   exit();
-} */
+}
 
 /*
  * exec test

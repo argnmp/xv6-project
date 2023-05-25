@@ -50,11 +50,11 @@ sys_sbrk(void)
 
   if(argint(0, &n) < 0)
     return -1;
-  addr = myproc()->sz;
-  if(myproc()->th.main != myproc()){
-    addr = myproc()->th.main->sz;
-  }
-  if(growproc(n) < 0)
+
+  /*
+   * allocate memory in main thread
+   */
+  if(growproc(n, &addr) < 0)
     return -1;
   return addr;
 }

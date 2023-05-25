@@ -167,7 +167,7 @@ userinit(void)
 // Grow current process's memory by n bytes.
 // Return 0 on success, -1 on failure.
 int
-growproc(int n)
+growproc(int n, int* addr)
 {
   uint sz;
   uint sz_limit;
@@ -180,6 +180,8 @@ growproc(int n)
    */
   acquire(&ptable.lock);
   curproc = curproc->th.main;
+
+  *addr = curproc->sz;
 
   sz = curproc->sz;
   sz_limit = curproc->sz_limit;
