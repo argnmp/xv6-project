@@ -754,6 +754,16 @@ int thread_create(thread_t *thread, void *(*start_routine)(void *), void *arg){
 
   acquire(&ptable.lock);
   /*
+   * first check if it is possible to allocate memory for thread
+   */
+  if(curproc->th.main->sz_limit!=0 && curproc->th.main->sz +  2*PGSIZE > curproc->th.main->sz_limit){
+    cprintf("n: %d, sz: %d, sz_limit: %d, limit exceed\n", 2*PGSIZE, curproc->th.main->sz, curproc->th.main->sz_limit);
+
+    np->state = UNUSED;
+    release(&ptable.lock);
+    return -1;
+  }
+  /*
    * set basic thread values
    */
   np->th.main = curproc->th.main;

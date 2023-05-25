@@ -90,7 +90,7 @@ int main(int argc, char* argv[]){
 /*
  * exit test
  */
-void* job(void* args){
+/* void* job(void* args){
   for(;;);
   thread_exit(0);
   return 0;
@@ -108,7 +108,7 @@ int main(int argc, char* argv[]){
   for(int i = 0; i<WORKER1; i++){
     thread_join(tids[i], (void*)&retval);
   }
-}
+} */
 
 /*
  * fork test
@@ -173,4 +173,24 @@ int main(int argc, char* argv[]){
     thread_join(tids[i], (void*)&retval);
   }
   exit(); 
+} */
+/*
+ * setmemlimit with thread_create test
+ */
+/* void* job(void* args){
+  thread_exit(0);
+  return 0;
+}
+int main(int argc, char* argv[]){
+  int* retval;
+  setmemorylimit(getpid(), 180224);
+  thread_t tids[WORKER1] = {0,}; 
+  for(int i = 0; i<WORKER1; i++){
+    int res = thread_create(&tids[i], job, (void*)i);
+    dbg("th create res: %d", res); 
+  }
+  for(int i = 0; i<WORKER1; i++){
+    thread_join(tids[i], (void*)&retval);
+  }
+  exit();
 } */
