@@ -318,6 +318,21 @@ exit(void)
   if(curproc == initproc)
     panic("init exiting");
 
+  /*
+   * this case is when exit() syscall is called from thread(not main thread)
+   * stop the execution of current thread
+   * and kill main thread(process)
+   * later, main thread calls exit() and all other threads would be cleaned up
+   */
+  if((curproc != curproc->th.main) && (curproc->delayed_exit != 1)){
+    acquire(&ptable.lock);
+    curproc->state = ZOMBIE;
+    curproc->th.main->killed = 1;
+    wakeup1(curproc->th.main);
+    sched();
+    panic("zombie exit");
+  }
+
 
   // Close all open files.
   for(fd = 0; fd < NOFILE; fd++){
@@ -815,6 +830,8 @@ int thread_create(thread_t *thread, void *(*start_routine)(void *), void *arg){
     sz = PGROUNDUP(sz);
     if((sz = allocuvm(np->pgdir, sz, sz + 2*PGSIZE)) == 0){
       np->state = UNUSED;
+      np->th.prev->th.next = np->th.next;
+      np->th.next->th.prev = np->th.prev;
       return -1;
     }
     clearpteu(np->pgdir, (char*)(sz - 2*PGSIZE));

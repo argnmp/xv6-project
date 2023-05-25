@@ -63,7 +63,7 @@ int main(int argc, char * argv[]){
 /*
  * exec test
  */
-/* void* job(void* args){
+void* job(void* args){
   if((int)args == 5){
     char* execargv[10]; 
     execargv[0] = "test_app";
@@ -85,7 +85,7 @@ int main(int argc, char* argv[]){
     thread_join(tids[i], (void*)&retval);
   }
   exit(); 
-} */
+}
 
 /*
  * exit test
@@ -113,7 +113,7 @@ int main(int argc, char* argv[]){
 /*
  * fork test
  */
-void* subtask(void* args){
+/* void* subtask(void* args){
   int* ret = (int*)((int)700+(int)args);
   thread_exit(ret);
   return 0;
@@ -148,7 +148,7 @@ int main(int argc, char * argv[]){
     printf(1, "\n");
   }
   exit();
-}
+} */
 /*
  * kill test
  */

@@ -68,7 +68,7 @@ int main(int argc, char * argv[]){
     //dbg("2 / tid: %d, th join", tids[i]);
     //dbg("tid:%d, th join, res: %d, retval: %d",tids[i], res, retval);
   }
-  dbg("test success\n");
+  dbg("test_app success\n");
   exit();
 }
 
