@@ -386,13 +386,20 @@ wait(void)
       if(p->state == ZOMBIE && p->th.main == p){
         /*
          * if target process has threads, remove them
+         * this sequence is done by delayed exit
          */
         struct proc* cursor = p->th.next; 
-        struct proc* next_cursor;
         while(p!=cursor){
-           next_cursor = cursor->th.next;
-           remove_th(cursor);
-           cursor = next_cursor;
+          if(cursor->state==UNUSED){
+            cursor = cursor->th.next;
+            continue;
+          }
+          if(cursor->state == RUNNING || cursor->state == RUNNABLE){
+            delayed_exit(curproc, cursor);
+            if(cursor->state != DELAYED) panic("wrong!");
+          }
+          remove_th(cursor);
+          cursor = cursor->th.next;
         } 
          
         // Found one.

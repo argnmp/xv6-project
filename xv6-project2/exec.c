@@ -39,7 +39,6 @@ exec(char *path, char **argv)
       if(cursor->state == RUNNING || cursor->state == RUNNABLE){
         // cprintf("running\n!");
         delayed_exit(curproc, cursor);
-        if(cursor->state != DELAYED) panic("wrong!");
       }
 
       // cprintf("pid: %d, tid: %d, parent: %d, state: %d, killed: %d\n", cursor->pid, cursor->th.tid, cursor->parent->pid, cursor->state, cursor->killed);

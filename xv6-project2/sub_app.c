@@ -63,7 +63,7 @@ int main(int argc, char * argv[]){
 /*
  * exec test
  */
-void* job(void* args){
+/* void* job(void* args){
   if((int)args == 5){
     char* execargv[10]; 
     execargv[0] = "test_app";
@@ -85,6 +85,29 @@ int main(int argc, char* argv[]){
     thread_join(tids[i], (void*)&retval);
   }
   exit(); 
+} */
+
+/*
+ * exit test
+ */
+void* job(void* args){
+  for(;;);
+  thread_exit(0);
+  return 0;
+}
+int main(int argc, char* argv[]){
+  thread_t tids[WORKER1] = {0,}; 
+  for(int i = 0; i<WORKER1; i++){
+    thread_create(&tids[i], job, (void*)i);
+  }
+  int* retval;
+  dbg("sleep main");
+  sleep(20);
+  dbg("exit!");
+  exit(); 
+  for(int i = 0; i<WORKER1; i++){
+    thread_join(tids[i], (void*)&retval);
+  }
 }
 
 /*
