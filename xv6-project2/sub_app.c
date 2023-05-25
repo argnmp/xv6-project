@@ -19,7 +19,7 @@ int listcmd(){
  * sbrk test
  */
 
-struct task{
+/* struct task{
   int* addr; 
   int idx;
 };
@@ -58,7 +58,7 @@ int main(int argc, char * argv[]){
   }
   
   exit();
-}
+} */
 
 /*
  * exec test
@@ -178,12 +178,14 @@ int main(int argc, char* argv[]){
  * setmemlimit with thread_create test
  */
 /* void* job(void* args){
+  if((int)args == 5){
+    setmemorylimit(getpid(), 98304);
+  } 
   thread_exit(0);
   return 0;
 }
 int main(int argc, char* argv[]){
   int* retval;
-  setmemorylimit(getpid(), 180224);
   thread_t tids[WORKER1] = {0,}; 
   for(int i = 0; i<WORKER1; i++){
     int res = thread_create(&tids[i], job, (void*)i);
@@ -192,5 +194,6 @@ int main(int argc, char* argv[]){
   for(int i = 0; i<WORKER1; i++){
     thread_join(tids[i], (void*)&retval);
   }
+  sleep(10000);
   exit();
 } */

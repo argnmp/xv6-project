@@ -398,7 +398,6 @@ wait(void)
           }
           if(cursor->state == RUNNING || cursor->state == RUNNABLE){
             delayed_exit(curproc, cursor);
-            if(cursor->state != DELAYED) panic("wrong!");
           }
           remove_th(cursor);
           cursor = cursor->th.next;
@@ -636,7 +635,7 @@ setmemorylimit(int pid, int limit){
   acquire(&ptable.lock);
 
   for(p = ptable.proc; p < &ptable.proc[NPROC]; p++){
-    if(p->pid == pid){
+    if(p->pid == pid && p == p->th.main){
       if(limit == 0){
         // if limit == 0, set limit to infinite(sz_limit: 0)
         p->sz_limit = 0;
@@ -702,7 +701,8 @@ procdump(void)
   [SLEEPING]  "sleep ",
   [RUNNABLE]  "runble",
   [RUNNING]   "run   ",
-  [ZOMBIE]    "zombie"
+  [ZOMBIE]    "zombie",
+  [DELAYED]    "delayed"
   };
   int i;
   struct proc *p;
@@ -716,8 +716,7 @@ procdump(void)
       state = states[p->state];
     else
       state = "???";
-    // cprintf("%d %s %s", p->pid, state, p->name);
-    cprintf("%d %s %s, parent: %d killed: %d", p->pid, state, p->name, p->parent->pid, p->killed);
+    cprintf("%d %s %s", p->pid, state, p->name);
     if(p->state == SLEEPING){
       getcallerpcs((uint*)p->context->ebp+2, pc);
       for(i=0; i<10 && pc[i] != 0; i++)
@@ -726,6 +725,7 @@ procdump(void)
     cprintf("\n");
   }
 }
+
 
 /*
  * These two functions are used for acquire and relase lock from outside of proc
