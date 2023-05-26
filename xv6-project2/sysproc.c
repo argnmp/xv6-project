@@ -102,7 +102,7 @@ sys_setmemorylimit(void){
     return -1;
   }
   // return -1 if limit < 0
-  if(limit < -1) {
+  if(limit < 0) {
     return -1;
   }
   return setmemorylimit(pid, limit);

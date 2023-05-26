@@ -9,7 +9,7 @@ typedef uint pde_t;
 struct proc_info_s{
   struct proc_i {
     int pid;
-    int tid;
+    char pname[16];
     uint ssz;
     uint sz;
     uint sz_limit;

@@ -92,6 +92,7 @@ allocproc(void)
 found:
   p->state = EMBRYO;
   p->pid = nextpid++;
+  p->ssz = 0;
   p->sz_limit = 0;
   // basic tid is set to -1, which means process itself
   p->th.tid = nexttid++;
@@ -685,11 +686,13 @@ procinfo(struct proc_info_s* pinfos){
   pinfos->pcount = 0;
 
   acquire(&ptable.lock);
-  procdump();
   for(p = ptable.proc; p < &ptable.proc[NPROC]; p++){
-    if(p->state != UNUSED){
+    if(p != p->th.main){
+      continue;
+    }
+    if(p->state == RUNNABLE || p->state == RUNNING || p->state == SLEEPING){
       pinfos->proc_arr[pinfos->pcount].pid = p->pid;
-      pinfos->proc_arr[pinfos->pcount].tid = p->th.tid;
+      safestrcpy(pinfos->proc_arr[pinfos->pcount].pname, p->name, sizeof(p->name));
       pinfos->proc_arr[pinfos->pcount].ssz = p->ssz;
       pinfos->proc_arr[pinfos->pcount].sz = p->sz;
       pinfos->proc_arr[pinfos->pcount].sz_limit = p->sz_limit;
@@ -844,7 +847,7 @@ int thread_create(thread_t *thread, void *(*start_routine)(void *), void *arg){
   *thread = np->th.tid;
 
   np->sz = sz;
-  np->ssz = 1*PGSIZE;
+  np->ssz = 2*PGSIZE;
   np->sz_limit = sz;
   np->state = RUNNABLE;
 

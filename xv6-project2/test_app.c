@@ -4,19 +4,19 @@
 #define dbg(fmt, args...) printf(1, "[%d: %s] pid %d | " fmt "\n",__LINE__, __FUNCTION__, getpid(), ##args)
 #define WORKER 9
 #define WORKER2 4
+#define PAGE_SIZE 4096
 int listcmd(){
   struct proc_info_s pinfos; 
   int res = procinfo(&pinfos);
   if(res < 0) return -1;  
   for(int i = 0; i < pinfos.pcount; i++){
-    // printf(1, "pid: %d | tid: %d | number of stack pages: %d | allocated memory size: %d | memory limit %d\n", pinfos.proc_arr[i].pid, pinfos.proc_arr[i].tid, pinfos.proc_arr[i].ssz / PAGE_SIZE, pinfos.proc_arr[i].sz, pinfos.proc_arr[i].sz_limit); 
-    printf(1, "pid: %d | tid: %d | ssz: %d | sz: %d | sz_limit %d\n", pinfos.proc_arr[i].pid, pinfos.proc_arr[i].tid, pinfos.proc_arr[i].ssz, pinfos.proc_arr[i].sz, pinfos.proc_arr[i].sz_limit); 
+    printf(1, "pid: %d | pname: %s | number of stack pages: %d | allocated memory size: %d | memory limit %d\n", pinfos.proc_arr[i].pid, pinfos.proc_arr[i].pname, pinfos.proc_arr[i].ssz / PAGE_SIZE, pinfos.proc_arr[i].sz, pinfos.proc_arr[i].sz_limit); 
 
   }
   return 0;
 }
 
-void* temp2(void* args){
+/* void* temp2(void* args){
   int* ret = (int*)((int)200+(int)args);
   // dbg("temp2");
   //dbg("before thread_exit()");
@@ -70,9 +70,10 @@ int main(int argc, char * argv[]){
   }
   dbg("test_app success\n");
   exit();
-}
+} */
 
-// int main(int argc, char * argv[]){
-//   dbg("----helloworld----");
-//   exit();
-// }
+int main(int argc, char * argv[]){
+  dbg("----helloworld----");
+  sleep(10000);
+  exit();
+}

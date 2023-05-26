@@ -4,13 +4,13 @@
 #define dbg(fmt, args...) printf(1, "[%d: %s] pid %d | " fmt "\n",__LINE__, __FUNCTION__, getpid(), ##args)
 #define WORKER1 20
 #define WORKER2 6
+#define PAGE_SIZE 4096
 int listcmd(){
   struct proc_info_s pinfos; 
   int res = procinfo(&pinfos);
   if(res < 0) return -1;  
   for(int i = 0; i < pinfos.pcount; i++){
-    // printf(1, "pid: %d | tid: %d | number of stack pages: %d | allocated memory size: %d | memory limit %d\n", pinfos.proc_arr[i].pid, pinfos.proc_arr[i].tid, pinfos.proc_arr[i].ssz / PAGE_SIZE, pinfos.proc_arr[i].sz, pinfos.proc_arr[i].sz_limit); 
-    printf(1, "pid: %d | tid: %d | ssz: %d | sz: %d | sz_limit %d\n", pinfos.proc_arr[i].pid, pinfos.proc_arr[i].tid, pinfos.proc_arr[i].ssz, pinfos.proc_arr[i].sz, pinfos.proc_arr[i].sz_limit); 
+    printf(1, "pid: %d | pname: %s | number of stack pages: %d | allocated memory size: %d | memory limit %d\n", pinfos.proc_arr[i].pid, pinfos.proc_arr[i].pname, pinfos.proc_arr[i].ssz / PAGE_SIZE, pinfos.proc_arr[i].sz, pinfos.proc_arr[i].sz_limit); 
 
   }
   return 0;
@@ -63,7 +63,7 @@ int main(int argc, char * argv[]){
 /*
  * exec test
  */
-void* job(void* args){
+/* void* job(void* args){
   if((int)args == 5){
     char* execargv[10]; 
     execargv[0] = "test_app";
@@ -85,7 +85,7 @@ int main(int argc, char* argv[]){
     thread_join(tids[i], (void*)&retval);
   }
   exit(); 
-}
+} */
 
 /*
  * exit test
@@ -177,9 +177,10 @@ int main(int argc, char* argv[]){
 /*
  * setmemlimit with thread_create test
  */
-/* void* job(void* args){
+void* job(void* args){
   if((int)args == 5){
     setmemorylimit(getpid(), 98304);
+    //dbg("setmemorylimit res: %d", res);
   } 
   thread_exit(0);
   return 0;
@@ -191,9 +192,9 @@ int main(int argc, char* argv[]){
     int res = thread_create(&tids[i], job, (void*)i);
     dbg("th create res: %d", res); 
   }
+  for(;;);
   for(int i = 0; i<WORKER1; i++){
     thread_join(tids[i], (void*)&retval);
   }
-  sleep(10000);
   exit();
-} */
+}

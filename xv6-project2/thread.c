@@ -59,7 +59,7 @@ uint load_thmem(struct proc* np){
     }
     clearpteu(np->pgdir, (char*)(sz - 2*PGSIZE));
     np->th.main->sz = sz;
-    np->th.main->ssz += 1;
+    np->th.main->ssz += 2*PGSIZE;
   }
   else {
     sz = ((uint*)np->th.main->thstack_sp)[0];
