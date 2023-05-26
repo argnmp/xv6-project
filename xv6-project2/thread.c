@@ -14,6 +14,29 @@ void init_thstacklk(){
   initlock(&thstacklk, "thstacklk");
 }
 
+int growthread(struct proc* target, uint sz_org, int n, uint* sz_ptr)
+{
+  /*
+   * just allocate pages to destination
+   * does not change thread values
+   */
+  uint sz = sz_org;
+  if(target->sz_limit!=0 && sz+n > target->sz_limit){
+    return -1;
+  }
+  if(n > 0){
+    if((sz = allocuvm(target->pgdir, sz, sz + n)) == 0){
+      return -1;
+    }
+  } else if(n < 0){
+    if((sz = deallocuvm(target->pgdir, sz, sz + n)) == 0){
+      return -1;
+    }
+  }
+  *sz_ptr = sz;
+  return 0;
+}
+
 int save_thmem(struct proc* curthread, struct proc* target){
   //acquire(&thstacklk);
   if(target->thstack_sp == target->thstack) {
@@ -25,20 +48,24 @@ int save_thmem(struct proc* curthread, struct proc* target){
   //release(&thstacklk);
   return 0;
 }
-uint load_thmem(struct proc* curthread){
-  //acquire(&thstacklk);
-  uint p;
-  if(curthread->th.main->thstack_sp == curthread->th.main->thstack_fp){
-    // cprintf("return 0\n");
-    //release(&thstacklk);
-    return 0; 
+uint load_thmem(struct proc* np){
+  if(np->th.main == np) panic("load thmem");
+
+  uint sz = PGROUNDUP(np->th.main->sz); 
+
+  if(np->th.main->thstack_sp == np->th.main->thstack_fp){
+    if(growthread(np->th.main, sz, 2*PGSIZE, &sz) == -1){
+      return 0;
+    }
+    clearpteu(np->pgdir, (char*)(sz - 2*PGSIZE));
+    np->th.main->sz = sz;
+    np->th.main->ssz += 1;
   }
   else {
-    p = ((uint*)curthread->th.main->thstack_sp)[0];
-    curthread->th.main->thstack_sp += 4; 
+    sz = ((uint*)np->th.main->thstack_sp)[0];
+    np->th.main->thstack_sp += 4; 
   }
-  //release(&thstacklk);
-  return p;
+  return sz;
 }
 void remove_th(struct proc* p){
   // free all resources
@@ -60,3 +87,5 @@ void delayed_exit(struct proc* curproc, struct proc* target){
   wakeup1_wrapper(target);
   sleep_wrapper(curproc);   
 }
+
+

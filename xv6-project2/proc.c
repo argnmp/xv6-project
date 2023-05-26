@@ -765,7 +765,7 @@ int thread_create(thread_t *thread, void *(*start_routine)(void *), void *arg){
   if((np = allocproc()) == 0){
     return -1;
   }
-  uint sp, sz, ssz;
+  uint sp, sz;
 
   acquire(&ptable.lock);
   /*
@@ -785,7 +785,6 @@ int thread_create(thread_t *thread, void *(*start_routine)(void *), void *arg){
   np->pgdir = np->th.main->pgdir;
   np->pid = np->th.main->pid;
   np->parent = np->th.main->parent;
-  sz = np->th.main->sz;
 
   /*
    * pid should remain same
@@ -801,8 +800,6 @@ int thread_create(thread_t *thread, void *(*start_routine)(void *), void *arg){
   np->th.prev = curproc;
   np->th.next->th.prev = np;
   np->th.pth = curproc;
-  
-  ssz = np->th.main->ssz;
   
   /*
    * copy trap frame from main thread
@@ -821,27 +818,14 @@ int thread_create(thread_t *thread, void *(*start_routine)(void *), void *arg){
    * if saved memory for thread exists, use it
    * from exec()
    */
-  int reuse_flag = 0;
-  uint p = load_thmem(np);
-  if(p==0){
-    reuse_flag = 0;
-    ssz += 1*PGSIZE;
-    // cprintf("no free thmem exist\n");
-    sz = PGROUNDUP(sz);
-    if((sz = allocuvm(np->pgdir, sz, sz + 2*PGSIZE)) == 0){
-      np->state = UNUSED;
-      np->th.prev->th.next = np->th.next;
-      np->th.next->th.prev = np->th.prev;
-      return -1;
-    }
-    clearpteu(np->pgdir, (char*)(sz - 2*PGSIZE));
+  sz = load_thmem(np);
+  if(sz==0){
+    np->state = UNUSED;
+    np->th.prev->th.next = np->th.next;
+    np->th.next->th.prev = np->th.prev;
+    release(&ptable.lock);
+    return -1;
   }
-  else {
-    reuse_flag = 1;
-    //cprintf("pid:%d, tid:%d, reuse!\n", curproc->pid, curproc->th.tid);
-    sz = p;
-  }
-
   /*
    * set fake return PC and argv pointer
    * from exec()
@@ -859,13 +843,6 @@ int thread_create(thread_t *thread, void *(*start_routine)(void *), void *arg){
 
   *thread = np->th.tid;
 
-  if(reuse_flag==0){
-    /*
-     * if memory newly allocated for thread, update main thread's values
-     */
-    np->th.main->sz = sz; 
-    np->th.main->ssz = ssz;
-  }
   np->sz = sz;
   np->ssz = 1*PGSIZE;
   np->sz_limit = sz;
