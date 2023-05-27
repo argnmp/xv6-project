@@ -27,36 +27,38 @@ exec(char *path, char **argv)
    */
 
   ptable_lk_acquire();
-    cursor = curproc->th.next; 
-    while(cursor != curproc){
-      // cprintf("await cursor pid: %d, tid: %d\n", cursor->pid, cursor->th.tid);
+  cursor = curproc->th.next; 
+  while(cursor != curproc){
 
-      if(cursor->state==UNUSED){
-        cursor = cursor->th.next;
-        continue;
-      }
-
-      if(cursor->state == RUNNING || cursor->state == RUNNABLE){
-        // cprintf("running\n!");
-        delayed_exit(curproc, cursor);
-      }
-
-      // cprintf("pid: %d, tid: %d, parent: %d, state: %d, killed: %d\n", cursor->pid, cursor->th.tid, cursor->parent->pid, cursor->state, cursor->killed);
-      kfree(cursor->kstack);
-      cursor->kstack = 0;
-      cursor->state = UNUSED;
-      cursor->pid = 0;
-      cursor->parent = 0;
-      cursor->name[0] = 0;
-      cursor->killed = 0;
-      cursor->delayed_exit = 0;
-
-      cursor = cursor->th.next; 
-
+    if(cursor->state==UNUSED){
+      cursor = cursor->th.next;
+      continue;
     }
-    //cprintf("end of while\n");
 
-      // sleep_wrapper(curproc);
+    if(cursor->state == RUNNING || cursor->state == RUNNABLE){
+      /*
+       * do delayed exit for RUNNING and RUNNABLE thread
+       */
+      delayed_exit(curproc, cursor);
+    }
+
+    // remove thread
+    kfree(cursor->kstack);
+    cursor->kstack = 0;
+    cursor->state = UNUSED;
+    cursor->pid = 0;
+    cursor->parent = 0;
+    cursor->name[0] = 0;
+    cursor->killed = 0;
+    cursor->delayed_exit = 0;
+
+    cursor = cursor->th.next; 
+  }
+
+
+  /*
+   * set current thread to main thread
+   */
   curproc->th.main = curproc;
   curproc->th.next= curproc;
   curproc->th.prev = curproc;
@@ -108,15 +110,15 @@ exec(char *path, char **argv)
   /*
    * allocate three pages
    * upper two pages are for stack
-   * lower one page is used for saving deallocated thread memory space
+   * lower one page(thmem) is used for saving deallocated thread memory space
    */
   sz = PGROUNDUP(sz);
   if((sz = allocuvm(pgdir, sz, sz + 3*PGSIZE)) == 0)
     goto bad;
   clearpteu(pgdir, (char*)(sz - 2*PGSIZE));
   sp = sz;
-  // set thread memory stack
-  // thstack memory must not be accessible to user
+  // set saved thread memory stack(thmem stack)
+  // thmem space must not be accessible to user
   clearpteu(pgdir, (char*)(sz - 3*PGSIZE));
   curproc->thstack = (char*)(sz - 3*PGSIZE);
   curproc->thstack_sp = (char*)(sz - 2*PGSIZE);
@@ -198,36 +200,38 @@ exec2(char *path, char **argv, int stacksize)
    */
 
   ptable_lk_acquire();
-    cursor = curproc->th.next; 
-    while(cursor != curproc){
-      // cprintf("await cursor pid: %d, tid: %d\n", cursor->pid, cursor->th.tid);
+  cursor = curproc->th.next; 
+  while(cursor != curproc){
 
-      if(cursor->state==UNUSED){
-        cursor = cursor->th.next;
-        continue;
-      }
-
-      if(cursor->state == RUNNING || cursor->state == RUNNABLE){
-        // cprintf("running\n!");
-        delayed_exit(curproc, cursor);
-      }
-
-      // cprintf("pid: %d, tid: %d, parent: %d, state: %d, killed: %d\n", cursor->pid, cursor->th.tid, cursor->parent->pid, cursor->state, cursor->killed);
-      kfree(cursor->kstack);
-      cursor->kstack = 0;
-      cursor->state = UNUSED;
-      cursor->pid = 0;
-      cursor->parent = 0;
-      cursor->name[0] = 0;
-      cursor->killed = 0;
-      cursor->delayed_exit = 0;
-
-      cursor = cursor->th.next; 
-
+    if(cursor->state==UNUSED){
+      cursor = cursor->th.next;
+      continue;
     }
-    //cprintf("end of while\n");
 
-      // sleep_wrapper(curproc);
+    if(cursor->state == RUNNING || cursor->state == RUNNABLE){
+      /*
+       * do delayed exit for RUNNING and RUNNABLE thread
+       */
+      delayed_exit(curproc, cursor);
+    }
+
+    //remove thread
+    kfree(cursor->kstack);
+    cursor->kstack = 0;
+    cursor->state = UNUSED;
+    cursor->pid = 0;
+    cursor->parent = 0;
+    cursor->name[0] = 0;
+    cursor->killed = 0;
+    cursor->delayed_exit = 0;
+
+    cursor = cursor->th.next; 
+
+  }
+
+  /*
+   * set current thread to main thread
+   */
   curproc->th.main = curproc;
   curproc->th.next= curproc;
   curproc->th.prev = curproc;
@@ -275,14 +279,11 @@ exec2(char *path, char **argv, int stacksize)
   end_op();
   ip = 0;
 
-  // Allocate two pages at the next page boundary.
-  // Make the first inaccessible.  Use the second as the user stack.
-
   /*
    * allocate 'stacksize' number of pages
    * PGSIZE + stacksize * PGSIZE
    * one for guard page and others for stack
-   * and one page is used for saving deallocated thread memory space
+   * and one page is used for saving deallocated thread memory space(thmem space)
    */
   sz = PGROUNDUP(sz);
   if((sz = allocuvm(pgdir, sz, sz + 2*PGSIZE + stacksize * PGSIZE)) == 0)
@@ -294,7 +295,8 @@ exec2(char *path, char **argv, int stacksize)
   clearpteu(pgdir, (char*)(sz - (PGSIZE + stacksize * PGSIZE)));
   sp = sz;
 
-  // set thread memory stack
+  // set saved thread memory stack(thmem stack)
+  // thmem space must not be accessible to user
   clearpteu(pgdir, (char*)(sz - (2*PGSIZE + stacksize * PGSIZE)));
   curproc->thstack = (char*)(sz - (2*PGSIZE + stacksize * PGSIZE));
   curproc->thstack_sp = (char*)(sz - (PGSIZE + stacksize * PGSIZE));
@@ -326,6 +328,9 @@ exec2(char *path, char **argv, int stacksize)
   safestrcpy(curproc->name, last, sizeof(curproc->name));
 
   // Commit to the user image.
+  /*
+   * need to reset thread data
+   */
   oldpgdir = curproc->pgdir;
   curproc->pgdir = pgdir;
   curproc->sz = sz;
