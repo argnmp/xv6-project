@@ -94,7 +94,7 @@ found:
   p->pid = nextpid++;
   p->ssz = 0;
   p->sz_limit = 0;
-  // basic tid is set to -1, which means process itself
+  // tid is unique across all threads
   p->th.tid = nexttid++;
   p->th.main = p;
   p->th.next = p;
@@ -176,7 +176,7 @@ growproc(int n, int* addr)
 
   /*
    * if curproc is not main thread,
-   * change to main thread and grow it size
+   * change to main thread and grow memory size of main thread
    * ptable lock is needed
    */
   acquire(&ptable.lock);
@@ -188,7 +188,7 @@ growproc(int n, int* addr)
   sz_limit = curproc->sz_limit;
   // check if requested memory exceeds memory limit of process
   if(sz_limit!=0 && sz+n > sz_limit){
-    //cprintf("n: %d, sz: %d, sz_limit: %d, limit exceed\n", n, sz, sz_limit);
+    // if requested size exceeds the memory limit, return -1
     release(&ptable.lock);
     return -1;
   }
@@ -205,6 +205,9 @@ growproc(int n, int* addr)
     }
   }
 
+  /*
+   * return to current thread
+   */
   curproc->sz = sz;
   curproc = myproc();
 
@@ -232,41 +235,41 @@ fork(void)
   acquire(&ptable.lock);
   /*
    * if the thread that called fork is not a main thread, change to main thread
-   * and set curthread
+   * set curthread, which means the thread that called fork syscall
    */
   curproc = curproc->th.main;
   struct proc* curthread = myproc();
+
   /*
-   * first update thmem stackspace and then update
+   * all thread for current process should not be copyed to the new process
+   * so, first update thmem stackspace and then update
    */
+
   np->thstack = curproc->thstack; 
   np->thstack_sp = curproc->thstack_sp;
   np->thstack_fp = curproc->thstack_fp;
 
-  /*
-   * remove all thread address spaces except for the thread that called fork
-   */
+  // save all thread address spaces except for the thread that called fork
   struct proc* cursor = curthread->th.next; 
   struct proc* next_cursor;
-  // just collects memory of RUNNABLE thread, because there is possibility of duplicate thmem record in thstack if collect thread in other states.  
+
   while(curthread!=cursor && cursor->state == RUNNABLE){
-    // now, just save only thread address space, later implement
     if(cursor == curproc){
       cursor = cursor->th.next;
       continue;
     }
     next_cursor = cursor->th.next;
-    //because current process is not new process, so save_thmem is impossible!!!
+    // move thstack_sp of np, becaues forked process does not copy existing threads
     save_thmem(cursor, np);
     cursor = next_cursor;
   } 
 
   /*
    * curproc->thstack_sp, remains same, 
-   * but np->thstack_sp differs by containing saved thread memory spaces
+   * but np->thstack_sp differs by saving other thread stack spaces 
    */
 
-  // have to copy entire process address space becasue of the heap space
+  // have to copy entire process address space becasue of the sbrk space
   // Copy process state from proc.
   if((np->pgdir = copyuvm(curproc->pgdir, curproc->sz)) == 0){
     kfree(np->kstack);
@@ -277,7 +280,6 @@ fork(void)
   np->sz = curproc->sz;
   np->parent = curthread;
   *np->tf = *curthread->tf;
-  //cprintf("fork | pid: %d, tid: %d, curthread esp: %d,curproc sz: %d\n",np->pid, np->th.tid, curthread->tf->esp, curproc->sz);
 
   /*
    * copy process info
@@ -314,7 +316,6 @@ exit(void)
   struct proc *curproc = myproc();
   struct proc *p;
   int fd;
-  //cprintf("exit called: pid %d, tid %d, killed %d\n", curproc->pid, curproc->th.tid, curproc->killed);
 
   if(curproc == initproc)
     panic("init exiting");
@@ -339,7 +340,8 @@ exit(void)
   for(fd = 0; fd < NOFILE; fd++){
     if(curproc->ofile[fd]){
       if(curproc->delayed_exit != 1){
-        // close file if thread is not in delayed_exit state
+        // close file if thread is not delayed exit state
+        // which means that current sequence is normal process exit
         fileclose(curproc->ofile[fd]);
       }
       curproc->ofile[fd] = 0;
@@ -353,10 +355,13 @@ exit(void)
 
   acquire(&ptable.lock);
 
+  /*
+   * delayed exit sequence
+   */
   if(curproc->delayed_exit == 1){
-    //cprintf("delayed exit\n");
     curproc->state = DELAYED;
     curproc->delayed_exit = 0;
+    // wakeup the thread that requested dealyed exit sequence of this thread
     wakeup1(curproc->delayed_exit_addr);
     sched();
     panic("zombie exit");
@@ -398,7 +403,7 @@ wait(void)
         continue;
       havekids = 1;
       /*
-       * wait for process, not thread
+       * wait for process(main thread), not thread
        */
       if(p->state == ZOMBIE && p->th.main == p){
         /*
@@ -412,13 +417,17 @@ wait(void)
             continue;
           }
           if(cursor->state == RUNNING || cursor->state == RUNNABLE){
+            /*
+             * do delayed exit for RUNNING and RUNNABLE thread
+             */
             delayed_exit(curproc, cursor);
           }
+          // remove the resources of thread if it exited by delayed exit
           remove_th(cursor);
           cursor = cursor->th.next;
         } 
          
-        // Found one.
+        // free process(main thread)
         pid = p->pid;
         kfree(p->kstack);
         p->kstack = 0;
@@ -617,7 +626,8 @@ kill(int pid)
   struct proc *p;
 
   /*
-   * set killed flag to main thread
+   * set killed flag to main thread(process)
+   * if main thread calls exit, it will remove threads
    */
 
   acquire(&ptable.lock);
@@ -650,6 +660,9 @@ setmemorylimit(int pid, int limit){
   acquire(&ptable.lock);
 
   for(p = ptable.proc; p < &ptable.proc[NPROC]; p++){
+    /*
+     * setmemorylimmit target main thread(process)
+     */
     if(p->pid == pid && p == p->th.main){
       if(limit == 0){
         // if limit == 0, set limit to infinite(sz_limit: 0)
@@ -664,7 +677,6 @@ setmemorylimit(int pid, int limit){
         // set sz_limit to limit
         p->sz_limit = limit;
       }
-      //cprintf("sml -> pid: %d | sz: %d | sz_limit:%d \n",pid, p->sz, p->sz_limit);
 
       release(&ptable.lock);
       return 0;
@@ -686,7 +698,10 @@ procinfo(struct proc_info_s* pinfos){
   pinfos->pcount = 0;
 
   acquire(&ptable.lock);
+
+  // save process information to pinfos
   for(p = ptable.proc; p < &ptable.proc[NPROC]; p++){
+    // only targets main thread
     if(p != p->th.main){
       continue;
     }
@@ -744,15 +759,17 @@ procdump(void)
 
 
 /*
- * These two functions are used for acquire and relase lock from outside of proc
+ * These two functions are used for acquiring and releasing lock from outside of proc.c
  */
-
 void ptable_lk_acquire(){
   acquire(&ptable.lock);
 }
 void ptable_lk_release(){
   release(&ptable.lock);
 }
+/*
+ * These two functions are used for sleep and wakeup from outside of proc.c
+ */
 void wakeup1_wrapper(void* chan){
   wakeup1(chan);
 }
@@ -775,8 +792,6 @@ int thread_create(thread_t *thread, void *(*start_routine)(void *), void *arg){
    * first check if it is possible to allocate memory for thread
    */
   if(curproc->th.main->sz_limit!=0 && curproc->th.main->sz +  2*PGSIZE > curproc->th.main->sz_limit){
-    cprintf("n: %d, sz: %d, sz_limit: %d, limit exceed\n", 2*PGSIZE, curproc->th.main->sz, curproc->th.main->sz_limit);
-
     np->state = UNUSED;
     release(&ptable.lock);
     return -1;
@@ -790,7 +805,7 @@ int thread_create(thread_t *thread, void *(*start_routine)(void *), void *arg){
   np->parent = np->th.main->parent;
 
   /*
-   * pid should remain same
+   * pid should remain the same
    */
   nextpid -= 1;
   np->pid = np->th.main->pid;
@@ -806,20 +821,18 @@ int thread_create(thread_t *thread, void *(*start_routine)(void *), void *arg){
   
   /*
    * copy trap frame from main thread
-   * from fork()
+   * code from fork()
    */
   *np->tf = *(np->th.main->tf);
 
   /*
    * set eip of trapframe to start_routine
-   * from exec()
+   * code from exec()
    */
   np->tf->eip = (uint)start_routine;
 
   /*
-   * 1 page for stack, 1 page for guard
-   * if saved memory for thread exists, use it
-   * from exec()
+   * load stack memory space using load_thmem
    */
   sz = load_thmem(np);
   if(sz==0){
@@ -830,8 +843,8 @@ int thread_create(thread_t *thread, void *(*start_routine)(void *), void *arg){
     return -1;
   }
   /*
-   * set fake return PC and argv pointer
-   * from exec()
+   * set fake return PC and arg pointer
+   * code from exec()
    */
   sp = sz;
   sp -= 8;
@@ -840,7 +853,7 @@ int thread_create(thread_t *thread, void *(*start_routine)(void *), void *arg){
   
   /*
    * set stack pointer
-   * from exec()
+   * code from exec()
    */
   np->tf->esp = sp;
 
@@ -852,7 +865,7 @@ int thread_create(thread_t *thread, void *(*start_routine)(void *), void *arg){
   np->state = RUNNABLE;
 
   /*
-   * copy file descriptor of main
+   * share file descriptor of main
    */
   int i;
   for(i = 0; i < NOFILE; i++)
@@ -889,6 +902,9 @@ void thread_exit(void *retval){
 
   acquire(&ptable.lock);
 
+  /*
+   * used for delayed exit
+   */
   if(curproc->delayed_exit == 1){
     curproc->state = DELAYED;
     curproc->delayed_exit = 0;
@@ -926,6 +942,9 @@ int thread_join(thread_t thread, void **retval){
         continue;
       havetargetthread = 1;
       if(p->state == ZOMBIE){
+        /*
+         * if target thread found, remove thread
+         */
         *retval = p->th.retval;
         // update thread linkage
         p->th.prev->th.next = p->th.next;
