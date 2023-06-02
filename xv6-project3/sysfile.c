@@ -116,7 +116,7 @@ sys_fstat(void)
 
 // Create the path new as a link to the same inode as old.
 int
-sys_link(void)
+sys_hlink(void)
 {
   char name[DIRSIZ], *new, *old;
   struct inode *dp, *ip;
@@ -161,6 +161,68 @@ bad:
   iupdate(ip);
   iunlockput(ip);
   end_op();
+  return -1;
+}
+int
+sys_slink(void)
+{
+  char name[DIRSIZ], *new, *old;
+  struct inode *dp, *ip;
+
+  if(argstr(0, &old) < 0 || argstr(1, &new) < 0)
+    return -1;
+
+  begin_op();
+  if((ip = namei(old)) == 0){
+    end_op();
+    return -1;
+  }
+
+  ilock(ip);
+  if(ip->type == T_DIR){
+    iunlockput(ip);
+    end_op();
+    return -1;
+  }
+
+  ip->nlink++;
+  iupdate(ip);
+  iunlock(ip);
+
+  if((dp = nameiparent(new, name)) == 0)
+    goto bad;
+  ilock(dp);
+  if(dp->dev != ip->dev || dirlink(dp, name, ip->inum) < 0){
+    iunlockput(dp);
+    goto bad;
+  }
+  iunlockput(dp);
+  iput(ip);
+
+  end_op();
+
+  return 0;
+
+bad:
+  ilock(ip);
+  ip->nlink--;
+  iupdate(ip);
+  iunlockput(ip);
+  end_op();
+  return -1;
+}
+int
+sys_link(void)
+{
+  int target;
+  if(argint(2, &target) < 0)
+    return -1;
+  if(target ==  1){
+    return sys_hlink();
+  }
+  else if(target == 2){
+    return sys_slink();
+  }
   return -1;
 }
 
