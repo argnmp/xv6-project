@@ -4,7 +4,7 @@
 #include "fcntl.h"
 #define dbg(fmt, args...) printf(1, "[%d: %s] pid %d | " fmt "\n",__LINE__, __FUNCTION__, getpid(), ##args)
 
-#define TARGET_FILE 33554432
+#define TARGET_FILE 16777216
 #define BSIZE 16384
 #define LOOP TARGET_FILE/BSIZE
 char buf[BSIZE] = {0,};
