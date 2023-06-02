@@ -21,7 +21,7 @@ struct superblock {
   uint bmapstart;    // Block number of first free map block
 };
 
-#define NDIRECT 10
+#define NDIRECT 9
 #define NINDIRECT (BSIZE / sizeof(uint))
 #define NADDR (BSIZE / sizeof(uint))
 #define DINDIRECT NADDR*NADDR
@@ -38,6 +38,7 @@ struct dinode {
   uint addrs[NDIRECT+1];   // Data block addresses
   uint D_addr;          // double indirect
   uint T_addr;          // triple indirect 
+  uint seq;
 };
 
 // Inodes per block.

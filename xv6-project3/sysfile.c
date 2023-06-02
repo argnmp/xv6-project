@@ -163,6 +163,10 @@ bad:
   end_op();
   return -1;
 }
+
+/*
+ * symbolic link
+ */
 int
 sys_slink(void)
 {
@@ -184,9 +188,9 @@ sys_slink(void)
     end_op();
     return -1;
   }
-
-  ip->nlink++;
-  iupdate(ip);
+  // do not increase links
+  // ip->nlink++;
+  // iupdate(ip);
   iunlock(ip);
 
   if((dp = nameiparent(new, name)) == 0)
@@ -205,8 +209,8 @@ sys_slink(void)
 
 bad:
   ilock(ip);
-  ip->nlink--;
-  iupdate(ip);
+  // ip->nlink--;
+  // iupdate(ip);
   iunlockput(ip);
   end_op();
   return -1;

@@ -27,6 +27,20 @@ static void itrunc(struct inode*);
 // only one device
 struct superblock sb; 
 
+/*
+ * to allocate unique sequence to inode
+ */
+struct spinlock seq_lock;
+uint seq = 1000;
+uint get_seq_safe(){
+  uint t;
+  acquire(&seq_lock);
+  t = seq;
+  seq += 1;
+  release(&seq_lock);
+  return t;
+}
+
 // Read the super block.
 void
 readsb(int dev, struct superblock *sb)
@@ -204,6 +218,12 @@ ialloc(uint dev, short type)
     if(dip->type == 0){  // a free inode
       memset(dip, 0, sizeof(*dip));
       dip->type = type;
+
+      acquire(&seq_lock);
+      dip->seq = seq++;
+      release(&seq_lock);
+      cdbg("dip->seq: %d", seq);
+
       log_write(bp);   // mark it allocated on the disk
       brelse(bp);
       return iget(dev, inum);
@@ -230,6 +250,7 @@ iupdate(struct inode *ip)
   dip->minor = ip->minor;
   dip->nlink = ip->nlink;
   dip->size = ip->size;
+  dip->seq = ip->seq;
   dip->D_addr = ip->D_addr;
   dip->T_addr = ip->T_addr;
   memmove(dip->addrs, ip->addrs, sizeof(ip->addrs));
@@ -305,6 +326,7 @@ ilock(struct inode *ip)
     ip->minor = dip->minor;
     ip->nlink = dip->nlink;
     ip->size = dip->size;
+    ip->seq = dip->seq;
     ip->D_addr = dip->D_addr;
     ip->T_addr = dip->T_addr;
     memmove(ip->addrs, dip->addrs, sizeof(ip->addrs));
@@ -515,6 +537,7 @@ stati(struct inode *ip, struct stat *st)
   st->type = ip->type;
   st->nlink = ip->nlink;
   st->size = ip->size;
+  st->seq = ip->seq;
 }
 
 //PAGEBREAK!

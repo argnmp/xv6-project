@@ -220,6 +220,7 @@ rsect(uint sec, void *buf)
   }
 }
 
+uint g_seq = 1;
 uint
 ialloc(ushort type)
 {
@@ -230,6 +231,8 @@ ialloc(ushort type)
   din.type = xshort(type);
   din.nlink = xshort(1);
   din.size = xint(0);
+  din.seq = g_seq;
+  g_seq += 1;
   winode(inum, &din);
   return inum;
 }

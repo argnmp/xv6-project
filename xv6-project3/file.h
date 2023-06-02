@@ -25,6 +25,7 @@ struct inode {
   uint addrs[NDIRECT+1];
   uint D_addr;          // double indirect
   uint T_addr;          // triple indirect 
+  uint seq;
 };
 
 // table mapping major device number to
