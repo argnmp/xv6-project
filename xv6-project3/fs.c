@@ -434,12 +434,12 @@ bmap(struct inode *ip, uint bn)
     a = (uint*)bp->data;
     
     //second indirect
-    if((addr = a[bn/NADDR]) == 0){
-      a[bn/NADDR] = addr = balloc(ip->dev);
+    if((addr = a[bn/(NADDR*NADDR)]) == 0){
+      a[bn/(NADDR*NADDR)] = addr = balloc(ip->dev);
       log_write(bp);
     }
     brelse(bp);
-    bn -= (bn/NADDR)*NADDR;
+    bn -= (bn/(NADDR*NADDR))*(NADDR*NADDR);
     bp = bread(ip->dev, addr);
     a = (uint*)bp->data;
 
