@@ -36,7 +36,6 @@ idtinit(void)
 void
 trap(struct trapframe *tf)
 {
-  cdbg("hello world");
   if(tf->trapno == T_SYSCALL){
     if(myproc()->killed)
       exit();

@@ -372,6 +372,7 @@ iunlockput(struct inode *ip)
 static uint
 bmap(struct inode *ip, uint bn)
 {
+  // cdbg("bn: %d", bn);
   uint addr, *a;
   struct buf *bp;
 
@@ -394,6 +395,72 @@ bmap(struct inode *ip, uint bn)
     }
     brelse(bp);
     return addr;
+  }
+
+  bn -= NINDIRECT;
+  if(bn < DINDIRECT){
+    //first indirect
+    if((addr = ip->D_addr) == 0)
+      ip->D_addr = addr = balloc(ip->dev);
+    bp = bread(ip->dev, addr);
+    a = (uint*)bp->data;
+    
+    //second indirect
+    if((addr = a[bn/NADDR]) == 0){
+      a[bn/NADDR] = addr = balloc(ip->dev);
+      log_write(bp);
+    }
+    brelse(bp);
+    bn -= (bn/NADDR)*NADDR;
+    bp = bread(ip->dev, addr);
+    a = (uint*)bp->data;
+
+    //data block access
+    if((addr = a[bn]) == 0){
+      a[bn] = addr = balloc(ip->dev);
+      log_write(bp);
+    }
+    brelse(bp);
+    return addr;
+  }
+  
+  bn -= DINDIRECT;
+
+  if(bn < TINDIRECT){
+    //first indirect
+    if((addr = ip->T_addr) == 0)
+      ip->T_addr = addr = balloc(ip->dev);
+    bp = bread(ip->dev, addr);
+    a = (uint*)bp->data;
+    
+    //second indirect
+    if((addr = a[bn/NADDR]) == 0){
+      a[bn/NADDR] = addr = balloc(ip->dev);
+      log_write(bp);
+    }
+    brelse(bp);
+    bn -= (bn/NADDR)*NADDR;
+    bp = bread(ip->dev, addr);
+    a = (uint*)bp->data;
+
+    //third indirect
+    if((addr = a[bn/NADDR]) == 0){
+      a[bn/NADDR] = addr = balloc(ip->dev);
+      log_write(bp);
+    }
+    brelse(bp);
+    bn -= (bn/NADDR)*NADDR;
+    bp = bread(ip->dev, addr);
+    a = (uint*)bp->data;
+
+    //data block access
+    if((addr = a[bn]) == 0){
+      a[bn] = addr = balloc(ip->dev);
+      log_write(bp);
+    }
+    brelse(bp);
+    return addr;
+
   }
 
   panic("bmap: out of range");
