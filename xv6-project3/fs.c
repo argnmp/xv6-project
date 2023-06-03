@@ -254,6 +254,7 @@ iupdate(struct inode *ip)
   dip->seq = ip->seq;
   dip->D_addr = ip->D_addr;
   dip->T_addr = ip->T_addr;
+  dip->ltype = ip->ltype;
   memmove(dip->addrs, ip->addrs, sizeof(ip->addrs));
   log_write(bp);
   brelse(bp);
@@ -330,6 +331,7 @@ ilock(struct inode *ip)
     ip->seq = dip->seq;
     ip->D_addr = dip->D_addr;
     ip->T_addr = dip->T_addr;
+    ip->ltype = dip->ltype;
     memmove(ip->addrs, dip->addrs, sizeof(ip->addrs));
     brelse(bp);
     ip->valid = 1;
@@ -369,6 +371,7 @@ iput(struct inode *ip)
       ip->type = 0;
       iupdate(ip);
       ip->valid = 0;
+
     }
   }
   releasesleep(&ip->lock);
@@ -759,6 +762,7 @@ namex(char *path, int nameiparent, char *name)
     iput(ip);
     return 0;
   }
+  
   return ip;
 }
 
@@ -773,4 +777,16 @@ struct inode*
 nameiparent(char *path, char *name)
 {
   return namex(path, 1, name);
+}
+
+int switchi(struct inode* ip){
+  if(ip->ltype == 1){
+    uint target_info[2];
+    char path_buf[10];
+    readi(ip, (char*)target_info, 0, sizeof(target_info));
+    readi(ip, path_buf, 8, target_info[1]);
+    cdbg("target seq: %d, path length: %d, path: %s", target_info[0], target_info[1], path_buf);
+  }
+
+  return 0;
 }
