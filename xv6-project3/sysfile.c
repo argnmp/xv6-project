@@ -136,7 +136,7 @@ sys_hlink(void)
     end_op();
     return -1;
   }
-
+  ip->ltype = 0;
   ip->nlink++;
   iupdate(ip);
   iunlock(ip);
@@ -321,6 +321,7 @@ sys_slink(void)
     end_op();
     return -1;
   }
+  uint old_iseq = ip->seq;
   iunlock(ip);
 
   /*
@@ -331,10 +332,14 @@ sys_slink(void)
     end_op();
     return -1;
   }
-  uint old_size[1] = {strlen(old)};
-  writei(ip, (char*)old_size, 0, sizeof(unsigned int));
-  writei(ip, old, 4, sizeof(old));
+  uint target_info[2] = {old_iseq, strlen(old)};
   
+  // ip is locked because of create
+  writei(ip, (char*)target_info, 0, sizeof(target_info));
+  writei(ip, old, 8, sizeof(old));
+  
+  ip->ltype = 1;
+  iupdate(ip);
   iunlockput(ip);
 
   end_op();

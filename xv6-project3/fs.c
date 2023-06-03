@@ -222,7 +222,8 @@ ialloc(uint dev, short type)
       acquire(&seq_lock);
       dip->seq = seq++;
       release(&seq_lock);
-      cdbg("dip->seq: %d", seq);
+      dip->ltype = 0; 
+      // cdbg("dip->seq: %d", seq);
 
       log_write(bp);   // mark it allocated on the disk
       brelse(bp);
@@ -538,6 +539,17 @@ stati(struct inode *ip, struct stat *st)
   st->nlink = ip->nlink;
   st->size = ip->size;
   st->seq = ip->seq;
+  st->ltype = ip->ltype;
+
+  /* if(ip->ltype == 1){
+    uint target_info[2];
+    readi(ip, (char*)target_info, 0, sizeof(target_info));
+    st->target_seq = target_info[0];
+    st->target_path_len = target_info[1];
+    char path_buf[100];
+    readi(ip, path_buf, 8, target_info[1]);
+    cdbg("%s", path_buf);
+  } */
 }
 
 //PAGEBREAK!

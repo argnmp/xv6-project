@@ -9,4 +9,8 @@ struct stat {
   short nlink; // Number of links to file
   uint size;   // Size of file in bytes
   uint seq;    // unique sequence of inode
+  uint ltype;
+  uint target_seq;
+  uint target_path_len;
+  uint target_path;
 };

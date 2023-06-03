@@ -26,6 +26,7 @@ struct inode {
   uint D_addr;          // double indirect
   uint T_addr;          // triple indirect 
   uint seq;
+  uint ltype;           // indicates link type: 0 for hardlink, 1 for symbolic link / default is 0, hardlink
 };
 
 // table mapping major device number to
