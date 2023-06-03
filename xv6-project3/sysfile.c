@@ -164,57 +164,7 @@ bad:
   return -1;
 }
 
-/*
- * symbolic link
- */
-int
-sys_slink(void)
-{
-  char name[DIRSIZ], *new, *old;
-  struct inode *dp, *ip;
-
-  if(argstr(0, &old) < 0 || argstr(1, &new) < 0)
-    return -1;
-
-  begin_op();
-  if((ip = namei(old)) == 0){
-    end_op();
-    return -1;
-  }
-
-  ilock(ip);
-  if(ip->type == T_DIR){
-    iunlockput(ip);
-    end_op();
-    return -1;
-  }
-  // do not increase links
-  // ip->nlink++;
-  // iupdate(ip);
-  iunlock(ip);
-
-  if((dp = nameiparent(new, name)) == 0)
-    goto bad;
-  ilock(dp);
-  if(dp->dev != ip->dev || dirlink(dp, name, ip->inum) < 0){
-    iunlockput(dp);
-    goto bad;
-  }
-  iunlockput(dp);
-  iput(ip);
-
-  end_op();
-
-  return 0;
-
-bad:
-  ilock(ip);
-  // ip->nlink--;
-  // iupdate(ip);
-  iunlockput(ip);
-  end_op();
-  return -1;
-}
+int sys_slink(void);
 int
 sys_link(void)
 {
@@ -346,6 +296,58 @@ create(char *path, short type, short major, short minor)
   iunlockput(dp);
 
   return ip;
+}
+/*
+ * symbolic link
+ */
+int
+sys_slink(void)
+{
+  char *new, *old;
+  struct inode *ip;
+
+  if(argstr(0, &old) < 0 || argstr(1, &new) < 0)
+    return -1;
+
+  begin_op();
+  if((ip = namei(old)) == 0){
+    end_op();
+    return -1;
+  }
+
+  ilock(ip);
+  if(ip->type == T_DIR){
+    iunlockput(ip);
+    end_op();
+    return -1;
+  }
+  iunlock(ip);
+
+  /*
+   * create symbolic link file
+   */
+  ip = create(new, T_FILE, 0, 0);
+  if(ip == 0){
+    end_op();
+    return -1;
+  }
+  uint old_size[1] = {strlen(old)};
+  writei(ip, (char*)old_size, 0, sizeof(unsigned int));
+  writei(ip, old, 4, sizeof(old));
+  
+  iunlockput(ip);
+
+  end_op();
+
+  return 0;
+
+/* bad:
+  ilock(ip);
+  // ip->nlink--;
+  // iupdate(ip);
+  iunlockput(ip);
+  end_op();
+  return -1; */
 }
 
 int

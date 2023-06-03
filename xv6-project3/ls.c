@@ -44,7 +44,7 @@ ls(char *path)
   switch(st.type){
   case T_FILE:
     printf(1, "%s %d %d %d\n", fmtname(path), st.type, st.ino, st.size);
-    udbg("seq: %d", st.seq);
+    // udbg("seq: %d", st.seq);
     break;
 
   case T_DIR:
@@ -65,7 +65,7 @@ ls(char *path)
         continue;
       }
       printf(1, "%s %d %d %d\n", fmtname(buf), st.type, st.ino, st.size);
-      udbg("seq: %d", st.seq);
+      // udbg("seq: %d", st.seq);
     }
     break;
   }
