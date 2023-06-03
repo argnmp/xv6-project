@@ -336,7 +336,7 @@ sys_slink(void)
   
   // ip is locked because of create
   writei(ip, (char*)target_info, 0, sizeof(target_info));
-  writei(ip, old, 8, sizeof(old));
+  writei(ip, old, 8, strlen(old));
   
   ip->ltype = 1;
   iupdate(ip);
@@ -380,6 +380,15 @@ sys_open(void)
       return -1;
     }
     ilock(ip);
+    /**/
+    ip = switchi(ip);
+
+    if(ip == 0){
+      end_op();
+      return -1;
+    }
+    /**/
+
     if(ip->type == T_DIR && omode != O_RDONLY){
       iunlockput(ip);
       end_op();

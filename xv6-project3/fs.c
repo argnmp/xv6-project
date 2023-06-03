@@ -786,11 +786,11 @@ struct inode* switchi(struct inode* ip){
     char path_buf[100] = {0,};
     readi(ip, (char*)target_info, 0, sizeof(target_info));
     readi(ip, path_buf, 8, target_info[1]);
-    //cdbg("target seq: %d, path length: %d, path: %s", target_info[0], target_info[1], path_buf);
+    cdbg("target seq: %d, path length: %d, path: %s", target_info[0], target_info[1], path_buf);
     iunlockput(ip);
 
     if((ip = namei(path_buf)) == 0){
-      cprintf("link target does not exist\n");
+      cprintf("link target does not exist | path: %s\n", path_buf);
       return 0;
     }
     ilock(ip);

@@ -2,12 +2,11 @@
 #include "stat.h"
 #include "user.h"
 #include "fcntl.h"
-#define dbg(fmt, args...) printf(1, "[%d: %s] pid %d | " fmt "\n",__LINE__, __FUNCTION__, getpid(), ##args)
 
 #define TARGET_FILE 16384
 #define BSIZE 16384
 #define LOOP TARGET_FILE/BSIZE
-char buf[BSIZE] = {0,};
+/* char buf[BSIZE] = {0,};
 int main(int argc, char * argv[]){
 
   for(int i = 0; i<BSIZE; i++){
@@ -26,6 +25,21 @@ int main(int argc, char * argv[]){
     }
   }
   
+  close(fd);
+  exit();
+} */
+int main(int argc, char* argv[]){
+  char* str = "helloworld";
+  int fd = open("test_file", O_CREATE | O_RDWR);
+  if(fd<0){
+    udbg("create file failed");
+    exit();
+  }
+  if(write(fd, str, strlen(str))!=strlen(str)){
+      udbg("write file failed"); 
+      close(fd);
+      exit();
+  }
   close(fd);
   exit();
 }

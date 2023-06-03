@@ -1,9 +1,20 @@
 #include "types.h"
 #include "stat.h"
 #include "user.h"
-#define dbg(fmt, args...) printf(1, "[%d: %s] pid %d | " fmt "\n",__LINE__, __FUNCTION__, getpid(), ##args)
+#include "fcntl.h"
 
 int main(int argc, char * argv[]){
-  dbg("----helloworld----");
+  int fd = open("tf", O_RDWR);
+  if(fd<0){
+    udbg("file does not opened");
+    exit();
+  }
+  char* str = "worldhello";
+  if(write(fd, str, strlen(str))!= strlen(str)){
+    udbg("write file failed"); 
+    close(fd);
+    exit();
+  }  
+  close(fd);
   exit();
 }
