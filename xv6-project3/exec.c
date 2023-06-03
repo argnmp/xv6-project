@@ -26,8 +26,15 @@ exec(char *path, char **argv)
     cprintf("exec: fail\n");
     return -1;
   }
+
   ilock(ip);
-  switchi(ip);
+  ip = switchi(ip);
+
+  if(ip == 0){
+    end_op();
+    return -1;
+  }
+
   pgdir = 0;
 
   // Check ELF header

@@ -779,14 +779,26 @@ nameiparent(char *path, char *name)
   return namex(path, 1, name);
 }
 
-int switchi(struct inode* ip){
-  if(ip->ltype == 1){
+// switch to symbolic link target
+struct inode* switchi(struct inode* ip){
+  while(ip->ltype == 1){
     uint target_info[2];
-    char path_buf[10];
+    char path_buf[100] = {0,};
     readi(ip, (char*)target_info, 0, sizeof(target_info));
     readi(ip, path_buf, 8, target_info[1]);
-    cdbg("target seq: %d, path length: %d, path: %s", target_info[0], target_info[1], path_buf);
-  }
+    //cdbg("target seq: %d, path length: %d, path: %s", target_info[0], target_info[1], path_buf);
+    iunlockput(ip);
 
-  return 0;
+    if((ip = namei(path_buf)) == 0){
+      cprintf("link target does not exist\n");
+      return 0;
+    }
+    ilock(ip);
+    if(ip->seq != target_info[0]){
+      cprintf("link target file has changed. invalid link\n");
+      iunlockput(ip);
+      return 0;
+    }
+  }
+  return ip;
 }
