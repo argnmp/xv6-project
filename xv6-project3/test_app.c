@@ -28,7 +28,7 @@ int main(int argc, char * argv[]){
   close(fd);
   exit();
 } */
-int main(int argc, char* argv[]){
+/* int main(int argc, char* argv[]){
   char* str = "helloworld";
   int fd = open("test_file", O_CREATE | O_RDWR);
   if(fd<0){
@@ -41,5 +41,9 @@ int main(int argc, char* argv[]){
       exit();
   }
   close(fd);
+  exit();
+} */
+int main(int argc, char* argv[]){
+  sync();
   exit();
 }
