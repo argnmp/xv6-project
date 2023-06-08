@@ -73,7 +73,10 @@ stat(const char *n, struct stat *st)
   int fd;
   int r;
 
-  fd = open(n, O_RDONLY);
+  /*
+   * use openself system call which does not redirects to the original inode of symbolic link to display symbolic link files
+   */
+  fd = openself(n, O_RDONLY);
   if(fd < 0)
     return -1;
   r = fstat(fd, st);

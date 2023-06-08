@@ -3,7 +3,7 @@
 #include "user.h"
 #include "fcntl.h"
 
-#define TARGET_FILE 16777216
+#define TARGET_FILE 16384
 #define BSIZE 16384
 #define LOOP TARGET_FILE/BSIZE
 /* char buf[BSIZE] = {0,};

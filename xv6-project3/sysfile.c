@@ -355,6 +355,9 @@ sys_slink(void)
   return -1; */
 }
 
+/*
+ * this default open syscall redirects symbolic link file to original inode
+ */
 int
 sys_open(void)
 {
@@ -380,6 +383,7 @@ sys_open(void)
       return -1;
     }
     ilock(ip);
+
     /**/
     ip = switchi(ip);
 
@@ -388,6 +392,60 @@ sys_open(void)
       return -1;
     }
     /**/
+
+    if(ip->type == T_DIR && omode != O_RDONLY){
+      iunlockput(ip);
+      end_op();
+      return -1;
+    }
+  }
+
+  if((f = filealloc()) == 0 || (fd = fdalloc(f)) < 0){
+    if(f)
+      fileclose(f);
+    iunlockput(ip);
+    end_op();
+    return -1;
+  }
+  iunlock(ip);
+  end_op();
+
+  f->type = FD_INODE;
+  f->ip = ip;
+  f->off = 0;
+  f->readable = !(omode & O_WRONLY);
+  f->writable = (omode & O_WRONLY) || (omode & O_RDWR);
+  return fd;
+}
+
+/*
+ * this open does not redirects to the original inode
+ */
+int
+sys_openself(void)
+{
+  char *path;
+  int fd, omode;
+  struct file *f;
+  struct inode *ip;
+
+  if(argstr(0, &path) < 0 || argint(1, &omode) < 0)
+    return -1;
+
+  begin_op();
+
+  if(omode & O_CREATE){
+    ip = create(path, T_FILE, 0, 0);
+    if(ip == 0){
+      end_op();
+      return -1;
+    }
+  } else {
+    if((ip = namei(path)) == 0){
+      end_op();
+      return -1;
+    }
+    ilock(ip);
 
     if(ip->type == T_DIR && omode != O_RDONLY){
       iunlockput(ip);

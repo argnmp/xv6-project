@@ -30,7 +30,10 @@ ls(char *path)
   struct dirent de;
   struct stat st;
 
-  if((fd = open(path, 0)) < 0){
+  /*
+   * use openself system call which does not redirects to the original inode of symbolic link to display symbolic link files
+   */
+  if((fd = openself(path, 0)) < 0){
     printf(2, "ls: cannot open %s\n", path);
     return;
   }

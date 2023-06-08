@@ -25,6 +25,7 @@ int sleep(int);
 int uptime(void);
 int sync(void);
 int flush(void);
+int openself(const char*, int);
 
 
 // ulib.c
