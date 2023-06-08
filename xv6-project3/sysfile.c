@@ -524,9 +524,19 @@ sys_pipe(void)
   fd[1] = fd1;
   return 0;
 }
-
 int
 sys_sync(void)
 {
-  return 0;
+  int res;
+  res = sync();
+  return res;
 }
+
+int
+sys_flush(void)
+{
+  int res;
+  res = bflush(1, 584);
+  return res;
+}
+

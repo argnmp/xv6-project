@@ -89,6 +89,26 @@ bget(uint dev, uint blockno)
       return b;
     }
   }
+
+  /*
+   * force sync() to reclaim buffers
+   */
+
+  cdbg("force sync");
+  release(&bcache.lock);
+  ksync();
+  acquire(&bcache.lock);
+  for(b = bcache.head.prev; b != &bcache.head; b = b->prev){
+    if(b->refcnt == 0 && (b->flags & B_DIRTY) == 0) {
+      b->dev = dev;
+      b->blockno = blockno;
+      b->flags = 0;
+      b->refcnt = 1;
+      release(&bcache.lock);
+      acquiresleep(&b->lock);
+      return b;
+    }
+  }
   panic("bget: no buffers");
 }
 
@@ -142,3 +162,26 @@ brelse(struct buf *b)
 //PAGEBREAK!
 // Blank page.
 
+/*
+ * this is used for testing
+ */
+int
+bflush(uint dev, uint blockno){
+  cdbg("bflush");
+  struct buf* b;
+  for(b = bcache.head.next; b != &bcache.head; b = b->next){
+    if(b->dev == dev && b->blockno == blockno){
+      if(holdingsleep(&b->lock))
+        panic("bflush");
+      if(b->refcnt != 0){
+        return -1;
+      }
+      cdbg("reset buf with blockno %d", b->blockno);
+      b->dev = 0;
+      b->blockno = 0;
+      b->flags = 0;
+      b->refcnt = 0;
+    }
+  }
+  return 0;
+}

@@ -15,6 +15,7 @@ void            binit(void);
 struct buf*     bread(uint, uint);
 void            brelse(struct buf*);
 void            bwrite(struct buf*);
+int             bflush(uint, uint);
 
 // console.c
 void            consoleinit(void);
@@ -87,6 +88,8 @@ void            initlog(int dev);
 void            log_write(struct buf*);
 void            begin_op();
 void            end_op();
+int             sync();
+int             ksync();
 
 // mp.c
 extern int      ismp;

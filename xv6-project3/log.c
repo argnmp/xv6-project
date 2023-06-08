@@ -130,8 +130,16 @@ begin_op(void)
     if(log.committing){
       sleep(&log, &log.lock);
     } else if(log.lh.n + (log.outstanding+1)*MAXOPBLOCKS > LOGSIZE){
-      // this op might exhaust log space; wait for commit.
-      sleep(&log, &log.lock);
+      
+      /*
+       * call sync to create buffer space
+       */
+
+      release(&log.lock);
+      ksync();
+      acquire(&log.lock);
+
+      continue;
     } else {
       log.outstanding += 1;
       release(&log.lock);
@@ -145,15 +153,15 @@ begin_op(void)
 void
 end_op(void)
 {
-  int do_commit = 0;
+  // int do_commit = 0;
 
   acquire(&log.lock);
   log.outstanding -= 1;
   if(log.committing)
     panic("log.committing");
   if(log.outstanding == 0){
-    do_commit = 1;
-    log.committing = 1;
+    /* do_commit = 1;
+    log.committing = 1; */
   } else {
     // begin_op() may be waiting for log space,
     // and decrementing log.outstanding has decreased
@@ -162,7 +170,7 @@ end_op(void)
   }
   release(&log.lock);
 
-  if(do_commit){
+  /* if(do_commit){
     // call commit w/o holding locks, since not allowed
     // to sleep with locks.
     commit();
@@ -170,7 +178,7 @@ end_op(void)
     log.committing = 0;
     wakeup(&log);
     release(&log.lock);
-  }
+  } */
 }
 
 // Copy modified blocks from cache to log.
@@ -200,6 +208,41 @@ commit()
     write_head();    // Erase the transaction from the log
   }
 }
+int
+sync(){
+  acquire(&log.lock);
+  if(log.committing)
+    panic("sync: commit should be occured here");
+
+  if(log.outstanding != 0){
+    wakeup(&log);
+    release(&log.lock);
+    return -1;
+  } 
+  log.committing = 1; 
+  int flush_count = log.lh.n;
+  release(&log.lock);
+  
+  commit();
+
+  acquire(&log.lock);
+  log.committing = 0;
+  wakeup(&log);
+  release(&log.lock);
+  return flush_count;
+}
+int
+ksync(){
+  acquire(&log.lock);
+  log.committing = 1;
+  release(&log.lock);
+  commit(); 
+  acquire(&log.lock);
+  log.committing = 0;
+  release(&log.lock);
+  return 0;
+}
+
 
 // Caller has modified b->data and is done with the buffer.
 // Record the block number and pin in the cache with B_DIRTY.

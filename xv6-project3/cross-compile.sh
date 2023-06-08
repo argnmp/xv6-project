@@ -1,4 +1,4 @@
-make clean TOOLPREFIX="x86_64-elf-"
+# make clean TOOLPREFIX="x86_64-elf-"
 if [[ $? != 0 ]]; then
     echo "compile failed"
     exit 1
