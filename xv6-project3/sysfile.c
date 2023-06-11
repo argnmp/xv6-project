@@ -593,8 +593,6 @@ sys_sync(void)
 int
 sys_flush(void)
 {
-  int res;
-  res = bflush(1, 584);
-  return res;
+  return 0;
 }
 

@@ -134,9 +134,10 @@ begin_op(void)
       /*
        * call sync to create buffer space
        */
+      // cdbg("begin op sync");
 
       release(&log.lock);
-      ksync();
+      ksync(0);
       acquire(&log.lock);
 
       continue;
@@ -190,6 +191,7 @@ write_log(void)
   for (tail = 0; tail < log.lh.n; tail++) {
     struct buf *to = bread(log.dev, log.start+tail+1); // log block
     struct buf *from = bread(log.dev, log.lh.block[tail]); // cache block
+    from->unsynchronized = 0;
     memmove(to->data, from->data, BSIZE);
     bwrite(to);  // write the log
     brelse(from);
@@ -232,11 +234,19 @@ sync(){
   return flush_count;
 }
 int
-ksync(){
+ksync(struct buf *b){
   acquire(&log.lock);
   log.committing = 1;
   release(&log.lock);
+
+  if(b!=0)
+    releasesleep(&b->lock);
+
   commit(); 
+
+  if(b!=0)
+    acquiresleep(&b->lock);
+
   acquire(&log.lock);
   log.committing = 0;
   release(&log.lock);
@@ -258,8 +268,11 @@ log_write(struct buf *b)
 {
   int i;
 
-  if (log.lh.n >= LOGSIZE || log.lh.n >= log.size - 1)
-    panic("too big a transaction");
+  while (log.lh.n >= LOGSIZE || log.lh.n >= log.size - 1){
+    // cdbg("log overflow");
+    ksync(b);
+    //panic("too big a transaction");
+  }
   if (log.outstanding < 1)
     panic("log_write outside of trans");
 
@@ -272,6 +285,7 @@ log_write(struct buf *b)
   if (i == log.lh.n)
     log.lh.n++;
   b->flags |= B_DIRTY; // prevent eviction
+  b->unsynchronized = 1;
   release(&log.lock);
 }
 

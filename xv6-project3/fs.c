@@ -492,8 +492,18 @@ bmap(struct inode *ip, uint bn)
     return addr;
 
   }
-
+  
   panic("bmap: out of range");
+}
+
+void
+bcleanup(struct inode *ip){
+  // cdbg("ip size: %d", ip->size);
+  for(int i = 0; i<ip->size; i+=BSIZE){
+    uint blockno = bmap(ip, i%BSIZE);    
+    // cdbg("i: %d, blockno: %d", i, blockno);
+    breset(ip->dev, blockno);         
+  }
 }
 
 // Truncate inode (discard contents).

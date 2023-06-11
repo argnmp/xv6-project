@@ -96,8 +96,9 @@ bget(uint dev, uint blockno)
 
   cdbg("force sync");
   release(&bcache.lock);
-  ksync();
+  ksync(0);
   acquire(&bcache.lock);
+
   for(b = bcache.head.prev; b != &bcache.head; b = b->prev){
     if(b->refcnt == 0 && (b->flags & B_DIRTY) == 0) {
       b->dev = dev;
@@ -162,25 +163,29 @@ brelse(struct buf *b)
 //PAGEBREAK!
 // Blank page.
 
-/*
- * this is used for testing
- */
 int
-bflush(uint dev, uint blockno){
-  cdbg("bflush");
+breset(uint dev, uint blockno){
+  // cdbg("bflush");
   struct buf* b;
   for(b = bcache.head.next; b != &bcache.head; b = b->next){
     if(b->dev == dev && b->blockno == blockno){
       if(holdingsleep(&b->lock))
         panic("bflush");
-      if(b->refcnt != 0){
-        return -1;
+      // cdbg("reset buf with blockno %d", b->blockno);
+      if(b->refcnt == 0 && b->unsynchronized != 0){
+        b->dev = 0;
+        b->blockno = 0;
+        b->flags = 0;
+        b->refcnt = 0;
+        b->unsynchronized = 0;
+        b->next->prev = b->prev;
+        b->prev->next = b->next;
+        b->next = bcache.head.next;
+        b->prev = &bcache.head;
+        bcache.head.next->prev = b;
+        bcache.head.next = b;
+        return 0;
       }
-      cdbg("reset buf with blockno %d", b->blockno);
-      b->dev = 0;
-      b->blockno = 0;
-      b->flags = 0;
-      b->refcnt = 0;
     }
   }
   return 0;

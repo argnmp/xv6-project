@@ -15,7 +15,7 @@ void            binit(void);
 struct buf*     bread(uint, uint);
 void            brelse(struct buf*);
 void            bwrite(struct buf*);
-int             bflush(uint, uint);
+int             breset(uint, uint);
 
 // console.c
 void            consoleinit(void);
@@ -54,6 +54,7 @@ int             readi(struct inode*, char*, uint, uint);
 void            stati(struct inode*, struct stat*);
 int             writei(struct inode*, char*, uint, uint);
 struct inode*   switchi(struct inode*);
+void            bcleanup(struct inode*);
 
 // ide.c
 void            ideinit(void);
@@ -89,7 +90,7 @@ void            log_write(struct buf*);
 void            begin_op();
 void            end_op();
 int             sync();
-int             ksync();
+int             ksync(struct buf*);
 
 // mp.c
 extern int      ismp;
