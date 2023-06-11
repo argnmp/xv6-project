@@ -178,12 +178,6 @@ breset(uint dev, uint blockno){
         b->flags = 0;
         b->refcnt = 0;
         b->unsynchronized = 0;
-        b->next->prev = b->prev;
-        b->prev->next = b->next;
-        b->next = bcache.head.next;
-        b->prev = &bcache.head;
-        bcache.head.next->prev = b;
-        bcache.head.next = b;
         return 0;
       }
     }

@@ -45,5 +45,6 @@ main(int argc, char *argv[])
 
   wait();
 
+  sync();
   exit();
 }

@@ -19,7 +19,7 @@
   close(fd);
   exit();
 } */
-int main(int argc, char* argv[]){
+/* int main(int argc, char* argv[]){
   char* str = "worldhello";
   int fd = open("test_file",O_RDWR);
   if(fd<0){
@@ -33,6 +33,23 @@ int main(int argc, char* argv[]){
   }
   int res = sync();
   udbg("flush count: %d", res);
+  close(fd);
+  sync();
+  exit();
+} */
+int main(int argc, char* argv[]){
+  char* str = "worldhello";
+  int fd = open("kkk_file", O_CREATE | O_RDWR);
+  if(fd<0){
+    udbg("create file failed");
+    exit();
+  }
+  if(write(fd, str, strlen(str))!=strlen(str)){
+      udbg("write file failed"); 
+      close(fd);
+      exit();
+  }
+  sync();
   close(fd);
   exit();
 }

@@ -18,6 +18,7 @@ main(int argc, char *argv[])
       break;
     }
   }
-
+  
+  sync();
   exit();
 }

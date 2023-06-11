@@ -20,5 +20,6 @@ main(int argc, char *argv[])
   else {
     printf(2, "Usage: ln [-h | -s] old new\n");
   }
+  sync();
   exit();
 }

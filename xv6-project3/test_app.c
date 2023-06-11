@@ -3,7 +3,7 @@
 #include "user.h"
 #include "fcntl.h"
 
-#define TARGET_FILE 33554432
+/* #define TARGET_FILE 33554432
 #define BSIZE 16384
 #define LOOP TARGET_FILE/BSIZE
 char buf[BSIZE] = {0,};
@@ -27,8 +27,8 @@ int main(int argc, char * argv[]){
   sync(); 
   close(fd);
   exit();
-}
-/* int main(int argc, char* argv[]){
+} */
+int main(int argc, char* argv[]){
   char* str = "helloworld";
   int fd = open("test_file", O_CREATE | O_RDWR);
   if(fd<0){
@@ -43,7 +43,7 @@ int main(int argc, char * argv[]){
   sync();
   close(fd);
   exit();
-} */
+}
 /* char buf[BSIZE] = {0,};
 int main(int argc, char * argv[]){
   for(int i = 0; i<BSIZE; i++){
