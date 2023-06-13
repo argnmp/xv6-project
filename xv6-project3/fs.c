@@ -244,6 +244,7 @@ iupdate(struct inode *ip)
   struct buf *bp;
   struct dinode *dip;
 
+  // cdbg("iupdate %d",IBLOCK(ip->inum, sb));
   bp = bread(ip->dev, IBLOCK(ip->inum, sb));
   dip = (struct dinode*)bp->data + ip->inum%IPB;
   dip->type = ip->type;
@@ -497,13 +498,35 @@ bmap(struct inode *ip, uint bn)
 }
 
 void
-bcleanup(struct inode *ip){
+bcleanup(struct inode *ip, int pid){
+  int* lhn = lhnptr();
+  int* lhblock = lhblockptr();
+  int* lhpid = lhpidptr();
+
+  //cdbg("pid: %d", pid);
   // cdbg("ip size: %d", ip->size);
-  for(int i = 0; i<ip->size; i+=BSIZE){
-    uint blockno = bmap(ip, i%BSIZE);    
-    // cdbg("i: %d, blockno: %d", i, blockno);
-    breset(ip->dev, blockno);         
+  /* uint blocks = 0;
+  if(ip->size % BSIZE != 0){
+    blocks = ip->size / BSIZE + 1;
   }
+  else {
+    blocks = ip->size / BSIZE;
+  } */
+  // cdbg("blocks: %d", blocks); 
+  /* for(int i = 0; i<blocks; i+=1){
+    uint blockno = bmap(ip, 0);    
+    cdbg("i: %d, blockno: %d, lh n: %d", i, blockno, *lhn);
+    breset(ip->dev, blockno);         
+  } */
+  acquireloglk();
+  for(int i = 0; i< *lhn; i++){
+    if(lhpid[i]==pid){
+      //cdbg("i: %d, pid: %d, lhpid: %d, blockno: %d", i, pid, lhpid[i], lhblock[i]);
+      breset(ip->dev, lhblock[i]);
+    }
+    
+  }
+  releaseloglk();
 }
 
 // Truncate inode (discard contents).

@@ -54,7 +54,7 @@ int             readi(struct inode*, char*, uint, uint);
 void            stati(struct inode*, struct stat*);
 int             writei(struct inode*, char*, uint, uint);
 struct inode*   switchi(struct inode*);
-void            bcleanup(struct inode*);
+void            bcleanup(struct inode*, int pid);
 
 // ide.c
 void            ideinit(void);
@@ -91,6 +91,12 @@ void            begin_op();
 void            end_op();
 int             sync();
 int             ksync(struct buf*);
+int*            lhblockptr();
+int*            lhnptr();
+int*            lhpidptr();
+void            acquireloglk();
+void            releaseloglk();
+int             getinodestart();
 
 // mp.c
 extern int      ismp;
@@ -115,6 +121,7 @@ int             growproc(int);
 int             kill(int);
 struct cpu*     mycpu(void);
 struct proc*    myproc();
+int             mypid();
 void            pinit(void);
 void            procdump(void);
 void            scheduler(void) __attribute__((noreturn));

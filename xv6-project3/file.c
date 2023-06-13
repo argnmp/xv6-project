@@ -65,7 +65,10 @@ fileclose(struct file *f)
     release(&ftable.lock);
     return;
   }
-  bcleanup(f->ip);
+  ilock(f->ip);
+  bcleanup(f->ip, mypid());
+  iunlock(f->ip);
+
   ff = *f;
   f->ref = 0;
   f->type = FD_NONE;

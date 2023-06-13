@@ -65,6 +65,16 @@ myproc(void) {
   return p;
 }
 
+int mypid(void){
+  struct cpu *c;
+  struct proc *p;
+  pushcli();
+  c = mycpu();
+  p = c->proc;
+  popcli();
+  return p->pid;
+}
+
 //PAGEBREAK: 32
 // Look in the process table for an UNUSED proc.
 // If found, change state to EMBRYO and initialize

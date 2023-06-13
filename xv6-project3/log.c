@@ -31,10 +31,13 @@
 
 // Contents of the header block, used for both the on-disk header block
 // and to keep track in memory of logged block# before commit.
+uint inodestart = 0;
 struct logheader {
   int n;
   int block[LOGSIZE];
 };
+
+int logpid[LOGSIZE];
 
 struct log {
   struct spinlock lock;
@@ -46,6 +49,25 @@ struct log {
   struct logheader lh;
 };
 struct log log;
+
+int getinodestart(){
+  return inodestart;
+}
+int* lhblockptr(){
+  return log.lh.block;
+}
+int* lhnptr(){
+  return &log.lh.n;
+}
+int* lhpidptr(){
+  return logpid;
+}
+void acquireloglk(){
+  acquire(&log.lock);
+}
+void releaseloglk(){
+  release(&log.lock);
+}
 
 static void recover_from_log(void);
 static void commit();
@@ -62,6 +84,7 @@ initlog(int dev)
   log.start = sb.logstart;
   log.size = sb.nlog;
   log.dev = dev;
+  inodestart = sb.inodestart;
   recover_from_log();
 }
 
@@ -281,9 +304,16 @@ log_write(struct buf *b)
     if (log.lh.block[i] == b->blockno)   // log absorbtion
       break;
   }
+
+  /*
+   * do not absorb logs for determining which process has written log
+   */
+  // i = log.lh.n;
   log.lh.block[i] = b->blockno;
-  if (i == log.lh.n)
+  logpid[i] = mypid();
+  if (i == log.lh.n){
     log.lh.n++;
+  }
   b->flags |= B_DIRTY; // prevent eviction
   b->unsynchronized = 1;
   release(&log.lock);

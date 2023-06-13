@@ -38,8 +38,8 @@
   exit();
 } */
 int main(int argc, char* argv[]){
-  char* str = "worldhello";
-  int fd = open("kkk_file", O_CREATE | O_RDWR);
+  char* str = "worldhellofaliefjalief";
+  int fd = open("test_file", O_CREATE | O_RDWR);
   if(fd<0){
     udbg("create file failed");
     exit();
