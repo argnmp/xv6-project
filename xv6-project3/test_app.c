@@ -24,7 +24,7 @@ int main(int argc, char * argv[]){
       exit();
     }
   }
-  sync(); 
+  // sync(); 
   close(fd);
   exit();
 } */

@@ -165,20 +165,15 @@ brelse(struct buf *b)
 
 int
 breset(uint dev, uint blockno){
-  if(blockno <= getinodestart() + NINODE - 1)
-    return 0;
-  // cdbg("bflush");
   struct buf* b;
   for(b = bcache.head.next; b != &bcache.head; b = b->next){
     if(b->dev == dev && b->blockno == blockno){
       if(b->refcnt == 0 && b->unsynchronized != 0){
-        cdbg("reset buf with blockno %d", b->blockno);
         b->dev = 0;
         b->blockno = 0;
         b->flags = 0;
         b->refcnt = 0;
         b->unsynchronized = 0;
-        // cdbg("endof breset");
         return 0;
       }
     }

@@ -305,10 +305,6 @@ log_write(struct buf *b)
       break;
   }
 
-  /*
-   * do not absorb logs for determining which process has written log
-   */
-  // i = log.lh.n;
   log.lh.block[i] = b->blockno;
   logpid[i] = mypid();
   if (i == log.lh.n){
