@@ -37,6 +37,8 @@ struct logheader {
   int block[LOGSIZE];
 };
 
+// contains the information of log creator which the same index to lh.block
+// synchronization is done exactly the same way the existing log code synchronizes
 int logpid[LOGSIZE];
 
 struct log {
@@ -50,7 +52,11 @@ struct log {
 };
 struct log log;
 
+/*
+ * functions that are used for accessing log outside of log.c
+ */
 int getinodestart(){
+  // deprecated
   return inodestart;
 }
 int* lhblockptr(){
@@ -84,6 +90,7 @@ initlog(int dev)
   log.start = sb.logstart;
   log.size = sb.nlog;
   log.dev = dev;
+  // deprecated
   inodestart = sb.inodestart;
   recover_from_log();
 }
@@ -155,7 +162,8 @@ begin_op(void)
     } else if(log.lh.n + (log.outstanding+1)*MAXOPBLOCKS > LOGSIZE){
       
       /*
-       * call sync to create buffer space
+       * if sync() is not called, buffer and log can be overflowed
+       * call sync to create buffer and log space
        */
       // cdbg("begin op sync");
 
@@ -177,15 +185,16 @@ begin_op(void)
 void
 end_op(void)
 {
-  // int do_commit = 0;
+  /*
+   * seperate commit from end_op to sync
+   */
 
   acquire(&log.lock);
   log.outstanding -= 1;
   if(log.committing)
     panic("log.committing");
   if(log.outstanding == 0){
-    /* do_commit = 1;
-    log.committing = 1; */
+
   } else {
     // begin_op() may be waiting for log space,
     // and decrementing log.outstanding has decreased
@@ -193,16 +202,6 @@ end_op(void)
     wakeup(&log);
   }
   release(&log.lock);
-
-  /* if(do_commit){
-    // call commit w/o holding locks, since not allowed
-    // to sleep with locks.
-    commit();
-    acquire(&log.lock);
-    log.committing = 0;
-    wakeup(&log);
-    release(&log.lock);
-  } */
 }
 
 // Copy modified blocks from cache to log.
@@ -214,6 +213,11 @@ write_log(void)
   for (tail = 0; tail < log.lh.n; tail++) {
     struct buf *to = bread(log.dev, log.start+tail+1); // log block
     struct buf *from = bread(log.dev, log.lh.block[tail]); // cache block
+    
+    /*
+     * set unsynchronized flag of buffer to 0
+     * because now this buffer of block is synchronized to disk by calling sync()
+     */
     from->unsynchronized = 0;
     memmove(to->data, from->data, BSIZE);
     bwrite(to);  // write the log
@@ -235,6 +239,9 @@ commit()
 }
 int
 sync(){
+  /*
+   * commit the logs
+   */
   acquire(&log.lock);
   if(log.committing)
     panic("sync: commit should be occured here");
@@ -245,6 +252,8 @@ sync(){
     return -1;
   } 
   log.committing = 1; 
+
+  // flush_count is the same as the pending logs number
   int flush_count = log.lh.n;
   release(&log.lock);
   
@@ -258,6 +267,12 @@ sync(){
 }
 int
 ksync(struct buf *b){
+  /*
+   * this function is used to commit() in the kernel code
+   */
+  /*
+   * if b is not 0, release sleep lock -> commit -> acquire sleeplock
+   */
   acquire(&log.lock);
   log.committing = 1;
   release(&log.lock);
@@ -292,7 +307,10 @@ log_write(struct buf *b)
   int i;
 
   while (log.lh.n >= LOGSIZE || log.lh.n >= log.size - 1){
-    // cdbg("log overflow");
+    /*
+     * log overflow case
+     * call ksync(b) to reclaim buffer and log space
+     */
     ksync(b);
     //panic("too big a transaction");
   }
@@ -306,11 +324,17 @@ log_write(struct buf *b)
   }
 
   log.lh.block[i] = b->blockno;
+  // write the pid of process that created this log
   logpid[i] = mypid();
   if (i == log.lh.n){
     log.lh.n++;
   }
   b->flags |= B_DIRTY; // prevent eviction
+  /*
+   * set the unsynchronized flag of buffer of written block to indicate
+   * that this block is not yet synchornized to disk (which is done by sync())
+   * unsynchronized is reset to 0 in write_log() that is called by commit() - sync()
+   */
   b->unsynchronized = 1;
   release(&log.lock);
 }

@@ -66,6 +66,10 @@ myproc(void) {
 }
 
 int mypid(void){
+  /*
+   * function that returns the pid of current process
+   * this is used by log_write, to indicate the log creator
+   */
   struct cpu *c;
   struct proc *p;
   pushcli();

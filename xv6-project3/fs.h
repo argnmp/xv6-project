@@ -24,6 +24,7 @@ struct superblock {
 #define NDIRECT 8
 #define NINDIRECT (BSIZE / sizeof(uint))
 #define NADDR (BSIZE / sizeof(uint))
+// add multiple indirects
 #define DINDIRECT NADDR*NADDR
 #define TINDIRECT NADDR*NADDR*NADDR 
 #define MAXFILE (NDIRECT + NINDIRECT + DINDIRECT + TINDIRECT)

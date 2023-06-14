@@ -91,10 +91,9 @@ bget(uint dev, uint blockno)
   }
 
   /*
-   * force sync() to reclaim buffers
+   * force ksync() to reclaim buffers
    */
 
-  cdbg("force sync");
   release(&bcache.lock);
   ksync(0);
   acquire(&bcache.lock);
@@ -165,10 +164,14 @@ brelse(struct buf *b)
 
 int
 breset(uint dev, uint blockno){
+  /*
+   * reset the buffer of target block
+   */
   struct buf* b;
   for(b = bcache.head.next; b != &bcache.head; b = b->next){
     if(b->dev == dev && b->blockno == blockno){
       if(b->refcnt == 0 && b->unsynchronized != 0){
+        // only reset when refcnt is 0
         b->dev = 0;
         b->blockno = 0;
         b->flags = 0;

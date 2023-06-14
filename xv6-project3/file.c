@@ -65,6 +65,10 @@ fileclose(struct file *f)
     release(&ftable.lock);
     return;
   }
+
+  /*
+   * clean up the unsynchronized buffer of opened files
+   */
   ilock(f->ip);
   bcleanup(f->ip, mypid());
   iunlock(f->ip);

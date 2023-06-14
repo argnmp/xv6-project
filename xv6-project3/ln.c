@@ -5,6 +5,9 @@
 int
 main(int argc, char *argv[])
 {
+  /*
+   * create link by specifying flags
+   */
   if(argc != 4){
     printf(2, "Usage: ln [-h | -s] old new\n");
     exit();

@@ -25,7 +25,7 @@ struct inode {
   uint addrs[NDIRECT+1];
   uint D_addr;          // double indirect
   uint T_addr;          // triple indirect 
-  uint seq;
+  uint seq;             // unique indicator for inode
   uint ltype;           // indicates link type: 0 for hardlink, 1 for symbolic link / default is 0, hardlink
 };
 

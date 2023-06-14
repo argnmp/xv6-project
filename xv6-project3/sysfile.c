@@ -168,6 +168,9 @@ int sys_slink(void);
 int
 sys_link(void)
 {
+  /*
+   * link syscall is seperated into hard / symbolic link
+   */
   int target;
   if(argint(2, &target) < 0)
     return -1;
@@ -325,19 +328,25 @@ sys_slink(void)
   iunlock(ip);
 
   /*
-   * create symbolic link file
+   * create symbolic link file which contains the information of original file
    */
   ip = create(new, T_FILE, 0, 0);
   if(ip == 0){
     end_op();
     return -1;
   }
+  /*
+   * structure of symbolic link data
+   * | original inode seq | file path length | file path |
+   * |      4 bytes       |      4 bytes     | variable  |
+   */
   uint target_info[2] = {old_iseq, strlen(old)};
   
   // ip is locked because of create
   writei(ip, (char*)target_info, 0, sizeof(target_info));
   writei(ip, old, 8, strlen(old));
   
+  // set ltype of this inode to indicate that this file is symbolic link
   ip->ltype = 1;
   iupdate(ip);
   iunlockput(ip);
@@ -385,6 +394,9 @@ sys_open(void)
     ilock(ip);
 
     /**/
+    /*
+     * call switchi(ip) in case the file is symbolic link
+     */
     ip = switchi(ip);
 
     if(ip == 0){
@@ -416,6 +428,7 @@ sys_open(void)
   f->readable = !(omode & O_WRONLY);
   f->writable = (omode & O_WRONLY) || (omode & O_RDWR);
 
+  // synchronize in case of creation
   ksync(0);
   return fd;
 }
@@ -472,6 +485,7 @@ sys_openself(void)
   f->readable = !(omode & O_WRONLY);
   f->writable = (omode & O_WRONLY) || (omode & O_RDWR);
 
+  // synchronize in case of creation
   ksync(0);
   return fd;
 }

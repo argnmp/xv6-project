@@ -27,6 +27,9 @@ exec(char *path, char **argv)
     return -1;
   }
 
+  /*
+   * switch inode if target file is symbolic linked file
+   */
   ilock(ip);
   ip = switchi(ip);
 

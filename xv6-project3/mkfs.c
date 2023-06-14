@@ -220,6 +220,9 @@ rsect(uint sec, void *buf)
   }
 }
 
+/*
+ * set seq of inodes of pre-generated files
+ */
 uint g_seq = 1;
 uint
 ialloc(ushort type)

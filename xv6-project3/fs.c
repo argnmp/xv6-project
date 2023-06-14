@@ -29,6 +29,7 @@ struct superblock sb;
 
 /*
  * to allocate unique sequence to inode
+ * this seq starts from 1000 because of the pre-generated files in mkfs.c
  */
 struct spinlock seq_lock;
 uint seq = 1000;
@@ -219,6 +220,10 @@ ialloc(uint dev, short type)
       memset(dip, 0, sizeof(*dip));
       dip->type = type;
 
+      /*
+       * allocate seq number
+       * and set ltype to 0 which means hard linked file
+       */
       acquire(&seq_lock);
       dip->seq = seq++;
       release(&seq_lock);
@@ -428,6 +433,9 @@ bmap(struct inode *ip, uint bn)
     return addr;
   }
 
+  /*
+   * double indirect access
+   */
   bn -= NINDIRECT;
   if(bn < DINDIRECT){
     //first indirect
@@ -455,6 +463,9 @@ bmap(struct inode *ip, uint bn)
     return addr;
   }
   
+  /*
+   * triple indirect access
+   */
   bn -= DINDIRECT;
 
   if(bn < TINDIRECT){
@@ -499,13 +510,23 @@ bmap(struct inode *ip, uint bn)
 
 void
 bcleanup(struct inode *ip, int pid){
+  /*
+   * examine the logs that target pid(process) has created
+   * by calling breset, it is possible to reset unsynchronized buffer
+   */
   int* lhn = lhnptr();
   int* lhblock = lhblockptr();
   int* lhpid = lhpidptr();
 
+  /*
+   * lhpid is the pointer to logpid that contains the pid information of log creator
+   */
+
   acquireloglk();
   for(int i = 0; i< *lhn; i++){
     if(lhpid[i]==pid){
+      // log at index i was created by the target process
+      // call breset to examine whether the buffer of this block should be reset
       breset(ip->dev, lhblock[i]);
     }
     
@@ -560,16 +581,6 @@ stati(struct inode *ip, struct stat *st)
   st->size = ip->size;
   st->seq = ip->seq;
   st->ltype = ip->ltype;
-
-  /* if(ip->ltype == 1){
-    uint target_info[2];
-    readi(ip, (char*)target_info, 0, sizeof(target_info));
-    st->target_seq = target_info[0];
-    st->target_path_len = target_info[1];
-    char path_buf[100];
-    readi(ip, path_buf, 8, target_info[1]);
-    cdbg("%s", path_buf);
-  } */
 }
 
 //PAGEBREAK!
@@ -796,9 +807,17 @@ nameiparent(char *path, char *name)
   return namex(path, 1, name);
 }
 
-// switch to symbolic link target
+// switch to symbolic link target if target is symbolic link
 struct inode* switchi(struct inode* ip){
+
+  /*
+   * if target inode is symbolic link, find the original one
+   */
   while(ip->ltype == 1){
+    /*
+     * if more that one symbolic link are connected,
+     * recursively find the original file
+     */
     uint target_info[2];
     char path_buf[100] = {0,};
     readi(ip, (char*)target_info, 0, sizeof(target_info));
@@ -807,12 +826,18 @@ struct inode* switchi(struct inode* ip){
     iunlockput(ip);
 
     if((ip = namei(path_buf)) == 0){
-      cprintf("linked target does not exist | symbolic link target: %s\n", path_buf);
+      /*
+       * linked target does not exist case
+       */
+      //cprintf("linked target does not exist | symbolic link target: %s\n", path_buf);
       return 0;
     }
     ilock(ip);
     if(ip->seq != target_info[0]){
-      cprintf("link target file has changed. invalid link\n");
+      /*
+       * same path but, linked target file changed case
+       */
+      //cprintf("link target file has changed. invalid link\n");
       iunlockput(ip);
       return 0;
     }
