@@ -3,8 +3,8 @@ typedef unsigned short ushort;
 typedef unsigned char  uchar;
 typedef uint pde_t;
 
-#define CDBG
-#define UDBG
+/* #define CDBG
+#define UDBG */
 
 #ifdef CDBG
 #define cdbg(fmt, args...) cprintf("[%d: %s] | " fmt "\n",__LINE__, __FUNCTION__, ##args)
